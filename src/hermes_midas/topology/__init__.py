@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 def __getattr__(name: str):
     if name == "SeedDataLoader":
         from hermes_midas.topology.seed_loader import SeedDataLoader
+
         return SeedDataLoader
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 

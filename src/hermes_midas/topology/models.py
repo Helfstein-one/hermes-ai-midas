@@ -9,6 +9,7 @@ from typing import Any
 @dataclass
 class ComputeSpec:
     """Compute specification for a workload."""
+
     worker_type: str | None = None
     number_of_workers: int | None = None
     dpu_per_worker: int | None = None
@@ -46,6 +47,7 @@ class ComputeSpec:
 @dataclass
 class BaselineMetrics:
     """Baseline runtime and cost performance before optimization."""
+
     duration_seconds: int
     cost_per_run_usd: float
     monthly_spend_usd: float
@@ -64,6 +66,7 @@ class BaselineMetrics:
 @dataclass
 class OptimizedMetrics:
     """Optimized runtime and cost targets post-refactoring."""
+
     duration_seconds: int
     cost_per_run_usd: float
     monthly_spend_usd: float
@@ -90,6 +93,7 @@ class OptimizedMetrics:
 @dataclass
 class AntiPatternDefinition:
     """Documented code or infrastructure anti-pattern."""
+
     pattern_id: str
     category: str
     description: str
@@ -114,6 +118,7 @@ class AntiPatternDefinition:
 @dataclass
 class TelemetrySnapshot:
     """Complete diagnostic telemetry metrics for a workload."""
+
     jvm_heap_memory_allocated_mb: int
     peak_memory_used_mb: int
     avg_memory_used_mb: int
@@ -140,6 +145,7 @@ class TelemetrySnapshot:
 @dataclass
 class WorkloadManifest:
     """Root metadata schema for seed workloads."""
+
     workload_id: str
     job_name: str
     engine: str
@@ -171,14 +177,9 @@ class WorkloadManifest:
         compute_spec = ComputeSpec.from_dict(data.get("compute_spec", {}))
         baseline_metrics = BaselineMetrics.from_dict(data.get("baseline_metrics", {}))
         optimized_metrics = OptimizedMetrics.from_dict(data.get("optimized_metrics", {}))
-        anti_patterns = [
-            AntiPatternDefinition.from_dict(p)
-            for p in data.get("anti_patterns", [])
-        ]
+        anti_patterns = [AntiPatternDefinition.from_dict(p) for p in data.get("anti_patterns", [])]
         telemetry = (
-            TelemetrySnapshot.from_dict(data["telemetry"])
-            if "telemetry" in data and data["telemetry"]
-            else None
+            TelemetrySnapshot.from_dict(data["telemetry"]) if "telemetry" in data and data["telemetry"] else None
         )
 
         return cls(
@@ -203,6 +204,7 @@ class WorkloadManifest:
 @dataclass
 class TopOffenderItem:
     """Ranked high-spend workload offender."""
+
     rank: int
     workload_id: str
     service: str
@@ -221,6 +223,7 @@ class TopOffenderItem:
 @dataclass
 class TimeSeriesCostPoint:
     """Daily or monthly itemized cost data point."""
+
     date: str
     usage_type: str
     usage_quantity: float
@@ -233,6 +236,7 @@ class TimeSeriesCostPoint:
 @dataclass
 class CostBreakdownResponse:
     """Detailed itemized cost breakdown for a workload."""
+
     workload_id: str
     start_date: str
     end_date: str

@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 class PRAction(str):
     """Possible outcomes of PR deduplication evaluation."""
+
     CREATED = "CREATED"
     UPDATED = "UPDATED"
     SKIPPED_DEDUPLICATED = "SKIPPED_DEDUPLICATED"
@@ -20,6 +21,7 @@ class PRAction(str):
 
 class MockPR(BaseModel):
     """Representation of an open or closed Pull Request for deduplication evaluation."""
+
     id: int = 1
     title: str = ""
     body: str = ""
@@ -29,9 +31,7 @@ class MockPR(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-def compute_deterministic_fingerprint(
-    script_path: str, engine: str, anti_pattern_ids: list[str]
-) -> str:
+def compute_deterministic_fingerprint(script_path: str, engine: str, anti_pattern_ids: list[str]) -> str:
     """Compute 16-character SHA-256 deterministic fingerprint with delimiter escaping."""
     normalized_patterns = sorted(anti_pattern_ids)
     payload = json.dumps([script_path, engine, normalized_patterns], separators=(",", ":"))
@@ -71,14 +71,16 @@ class PRDeduplicationEngine:
             for rp in raw_prs:
                 # Try to extract metadata if present
                 meta = rp.get("metadata", {})
-                prs.append(MockPR(
-                    id=rp.get("pr_number") or rp.get("number") or rp.get("id", 1),
-                    title=rp.get("title", ""),
-                    body=rp.get("body", ""),
-                    head_branch=rp.get("branch") or rp.get("head", {}).get("ref", ""),
-                    is_open=rp.get("status") in ("OPEN", "CREATED", "UPDATED", None),
-                    metadata=meta,
-                ))
+                prs.append(
+                    MockPR(
+                        id=rp.get("pr_number") or rp.get("number") or rp.get("id", 1),
+                        title=rp.get("title", ""),
+                        body=rp.get("body", ""),
+                        head_branch=rp.get("branch") or rp.get("head", {}).get("ref", ""),
+                        is_open=rp.get("status") in ("OPEN", "CREATED", "UPDATED", None),
+                        metadata=meta,
+                    )
+                )
 
         for pr in prs:
             is_open = pr.get("is_open", True) if isinstance(pr, dict) else getattr(pr, "is_open", True)

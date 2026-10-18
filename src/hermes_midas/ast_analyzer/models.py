@@ -9,6 +9,7 @@ from typing import Any
 
 class AntiPatternType(StrEnum):
     """Categorization of detected PySpark anti-patterns."""
+
     ORPHAN_ACTION = "ORPHAN_ACTION"
     UNBROADCASTED_JOIN = "UNBROADCASTED_JOIN"
     SUBOPTIMAL_PARTITION = "SUBOPTIMAL_PARTITION"
@@ -17,6 +18,7 @@ class AntiPatternType(StrEnum):
 
 class Severity(StrEnum):
     """Severity ratings for compute waste and performance hazards."""
+
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -27,6 +29,7 @@ class Severity(StrEnum):
 @dataclass
 class AntiPatternMatch:
     """Represents a specific anti-pattern match identified within PySpark source code."""
+
     pattern_id: str
     pattern_name: str
     line_start: int
@@ -75,6 +78,7 @@ AntiPatternDetection = AntiPatternMatch
 @dataclass
 class ValidationResult:
     """Result of the 4-gate AST patch validation pipeline."""
+
     is_valid: bool = True
     gate: str = ""
     error_message: str | None = None
@@ -107,6 +111,7 @@ class ValidationResult:
 @dataclass
 class ASTInspectionResult:
     """Aggregated output from static AST analysis and patch generation."""
+
     file_path: str = ""
     anti_patterns: list[AntiPatternMatch] = field(default_factory=list)
     patched_code: str = ""

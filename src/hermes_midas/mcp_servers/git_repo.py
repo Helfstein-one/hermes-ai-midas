@@ -47,7 +47,11 @@ def format_midas_touch_pr(
     if not rows:
         rows = "| **Code Pattern** | Static AST and Telemetry Optimizations | Deterministic waste elimination |"
 
-    diff_lines = "\n".join(f"- {d}" for d in code_diff_summary) if code_diff_summary else "- Validated via ast.parse and compile."
+    diff_lines = (
+        "\n".join(f"- {d}" for d in code_diff_summary)
+        if code_diff_summary
+        else "- Validated via ast.parse and compile."
+    )
 
     return f"""# ⚡ [Midas Touch] FinOps Optimization: {workload_name}
 
@@ -210,6 +214,7 @@ def run_sse() -> None:
 
 if __name__ == "__main__":
     import sys
+
     transport = sys.argv[1] if len(sys.argv) > 1 else "stdio"
     if transport == "sse":
         run_sse()

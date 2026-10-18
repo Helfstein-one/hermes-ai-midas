@@ -24,6 +24,7 @@ from hermes_midas.orchestrator.pipeline import async_optimize_workload
 
 class PipelineMetrics(BaseModel):
     """Execution telemetry metrics passed with webhook trigger."""
+
     duration_seconds: float
     allocated_dpus: float | None = None
     vcpu_hours: float | None = None
@@ -35,6 +36,7 @@ class PipelineMetrics(BaseModel):
 
 class AirflowTriggerPayload(BaseModel):
     """Payload schema for POST /api/v1/triggers/airflow."""
+
     dag_id: str
     task_id: str
     run_id: str
@@ -51,6 +53,7 @@ class AirflowTriggerPayload(BaseModel):
 
 class AirflowTriggerResponse(BaseModel):
     """Response schema for Airflow webhook trigger."""
+
     status: str
     job_id: str
     dag_id: str
@@ -88,9 +91,7 @@ def create_airflow_trigger_app(
         if x_midas_bypass_auth != "1":
             if not x_airflow_signature:
                 raise HTTPException(status_code=401, detail="Missing X-Airflow-Signature")
-            expected_sig = "sha256=" + hmac.new(
-                webhook_secret.encode("utf-8"), body_bytes, hashlib.sha256
-            ).hexdigest()
+            expected_sig = "sha256=" + hmac.new(webhook_secret.encode("utf-8"), body_bytes, hashlib.sha256).hexdigest()
             if not hmac.compare_digest(x_airflow_signature, expected_sig):
                 raise HTTPException(status_code=401, detail="Invalid HMAC signature")
 
@@ -126,9 +127,7 @@ def create_airflow_trigger_app(
             )
 
             fp = pipeline_res.fingerprint or ""
-            branch = pipeline_res.branch_name or (
-                generate_branch_name(payload.script_path, fp) if fp else ""
-            )
+            branch = pipeline_res.branch_name or (generate_branch_name(payload.script_path, fp) if fp else "")
 
             if payload.script_path in prs and fp:
                 existing = prs[payload.script_path]

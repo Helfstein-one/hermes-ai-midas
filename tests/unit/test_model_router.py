@@ -24,16 +24,17 @@ from hermes_midas.router import (
 # Tier 1: Feature Unit Tests
 # ============================================================================
 
+
 @pytest.mark.tier1
 @pytest.mark.asyncio
 async def test_router_falls_back_to_tier3_offline():
     """Tier 1: Router routes to Tier 3 Deterministic Fallback in offline mode."""
-    code_with_bare_action = '''from pyspark.sql import SparkSession
+    code_with_bare_action = """from pyspark.sql import SparkSession
 spark = SparkSession.builder.appName("Test").getOrCreate()
 df = spark.read.parquet("s3://bucket/data/")
 df.count()
 df.write.parquet("s3://bucket/out/")
-'''
+"""
     router = DeterministicModelRouter(offline_mode=True)
     req = RefactoringRequest(
         file_path="jobs/orders.py",
@@ -70,6 +71,7 @@ async def test_router_generated_code_compiles(unbroadcasted_join_code: str):
 # ============================================================================
 # Tier 2: Boundary & Corner Cases
 # ============================================================================
+
 
 @pytest.mark.tier2
 @pytest.mark.asyncio

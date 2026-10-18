@@ -82,7 +82,7 @@ class SuboptimalPartitionDetector(ast.NodeVisitor):
         start = getattr(node, "lineno", 1) - 1
         end = getattr(node, "end_lineno", start + 1)
         if 0 <= start < len(self.source_lines):
-            return "\n".join(self.source_lines[start:min(end, len(self.source_lines))]).strip()
+            return "\n".join(self.source_lines[start : min(end, len(self.source_lines))]).strip()
         return ""
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -93,7 +93,11 @@ class SuboptimalPartitionDetector(ast.NodeVisitor):
             # Case A: Excessive repartitioning without column expressions
             if attr_name == "repartition":
                 # Only flag if there is a single constant integer argument > 200 without column args
-                if len(node.args) == 1 and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, int):
+                if (
+                    len(node.args) == 1
+                    and isinstance(node.args[0], ast.Constant)
+                    and isinstance(node.args[0].value, int)
+                ):
                     partition_count = node.args[0].value
                     if partition_count > 200:
                         self.matches.append(
@@ -158,7 +162,11 @@ class SuboptimalPartitionDetector(ast.NodeVisitor):
                             ),
                             remediation_strategy=f"Add .partitionBy({', '.join(repr(k) for k in suggested_keys)}) prior to .{attr_name}().",
                             code_snippet=self._get_snippet(node),
-                            details={"write_action": attr_name, "suggested_keys": suggested_keys, "type": "missing_partition_by"},
+                            details={
+                                "write_action": attr_name,
+                                "suggested_keys": suggested_keys,
+                                "type": "missing_partition_by",
+                            },
                         )
                     )
 

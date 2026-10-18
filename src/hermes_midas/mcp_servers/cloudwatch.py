@@ -122,7 +122,9 @@ def get_gc_and_idle_metrics(job_id: str) -> dict[str, Any]:
         "gc_time_ratio": gc.get("gc_time_ratio", 0.0),
         "idle_percentage": idle.get("idle_percentage", 0.0),
         "is_gc_thrashing": gc.get("is_gc_thrashing", False),
-        "status": "ANOMALY_DETECTED" if (gc.get("is_gc_thrashing") or idle.get("idle_percentage", 0) > 50) else "HEALTHY",
+        "status": "ANOMALY_DETECTED"
+        if (gc.get("is_gc_thrashing") or idle.get("idle_percentage", 0) > 50)
+        else "HEALTHY",
     }
 
 
@@ -198,6 +200,7 @@ def run_sse() -> None:
 
 if __name__ == "__main__":
     import sys
+
     transport = sys.argv[1] if len(sys.argv) > 1 else "stdio"
     if transport == "sse":
         run_sse()

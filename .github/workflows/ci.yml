@@ -63,8 +63,7 @@ jobs:
 
       - name: Audit Lockfile Dependencies
         run: |
-          uv pip install pip-audit
-          uv run pip-audit --strict || echo "Security scan advisory completed"
+          uvx pip-audit --strict || echo "Security scan advisory completed"
 
   assets-integrity:
     name: "1.3 Integrity / Draw.io & Arch Assets"
@@ -299,10 +298,19 @@ jobs:
       - name: Validate compose.yaml with Docker Compose
         run: docker compose -f compose.yaml config
 
-      - name: Verify Topology Schema via Python Pytest
-        run: |
-          pip install pyyaml pydantic
-          python -m pytest tests/unit/test_topology.py -v --tb=short
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install Dependencies
+        run: uv sync
+
+      - name: Verify Topology Schema via Pytest
+        run: uv run pytest tests/unit/test_topology.py -v --tb=short
 
   build-docker-image:
     name: "5.2 Container / Production Dockerfile Build"

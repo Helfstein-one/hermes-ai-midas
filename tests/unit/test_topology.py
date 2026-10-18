@@ -23,6 +23,7 @@ from hermes_midas.topology import (
 # Tier 1: Feature Unit Tests
 # ============================================================================
 
+
 @pytest.mark.tier1
 def test_mock_cost_explorer_top_offenders():
     """Tier 1: Verify Mock Cost Explorer correctly ranks and returns top spending workloads."""
@@ -81,6 +82,7 @@ def test_seed_data_loader_finds_all_workloads():
 # Tier 2: Boundary & Corner Cases
 # ============================================================================
 
+
 @pytest.mark.tier2
 def test_mock_cost_explorer_itemized_breakdown():
     """Tier 2: Itemized breakdown query returns granular time series points."""
@@ -107,6 +109,7 @@ def test_mock_cloudwatch_nonexistent_workload_returns_default():
 # ============================================================================
 # Tier 3: Topology Specification Validation
 # ============================================================================
+
 
 @pytest.mark.tier3
 def test_compose_yaml_specification():

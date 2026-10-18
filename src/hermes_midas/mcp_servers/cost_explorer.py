@@ -180,6 +180,7 @@ def run_sse() -> None:
 
 if __name__ == "__main__":
     import sys
+
     transport = sys.argv[1] if len(sys.argv) > 1 else "stdio"
     if transport == "sse":
         run_sse()

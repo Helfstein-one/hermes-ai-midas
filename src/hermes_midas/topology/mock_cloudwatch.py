@@ -48,7 +48,11 @@ class MockCloudWatchClient:
         gc_status = "GC_THRASHING" if gc_ratio > 0.20 else ("WARNING" if gc_ratio > 0.10 else "HEALTHY")
 
         spill_bytes = t.spill_to_disk_bytes
-        spill_status = "MASSIVE_DISK_SPILL" if spill_bytes > 10 * 1024**3 else ("MODERATE_SPILL" if spill_bytes > 0 else "NO_SPILL")
+        spill_status = (
+            "MASSIVE_DISK_SPILL"
+            if spill_bytes > 10 * 1024**3
+            else ("MODERATE_SPILL" if spill_bytes > 0 else "NO_SPILL")
+        )
 
         # Estimate wasted core hours
         total_exec_hours = round(float(m.baseline_metrics.duration_seconds) / 3600.0 * 64, 1)
@@ -59,7 +63,9 @@ class MockCloudWatchClient:
             "job_name": m.job_name,
             "engine": m.engine,
             "run_id": f"run-{m.engine[:3]}-20261015-080000",
-            "status": "COMPLETED_WITH_WARNINGS" if (idle_pct > 50 or gc_ratio > 0.2 or spill_bytes > 0) else "COMPLETED",
+            "status": "COMPLETED_WITH_WARNINGS"
+            if (idle_pct > 50 or gc_ratio > 0.2 or spill_bytes > 0)
+            else "COMPLETED",
             "duration_seconds": m.baseline_metrics.duration_seconds,
             "heap_memory": {
                 "max_allocated_mb": t.jvm_heap_memory_allocated_mb,
@@ -77,8 +83,10 @@ class MockCloudWatchClient:
             },
             "data_skew": {
                 "skew_factor": skew_factor,
-                "max_task_duration_seconds": t.max_task_duration_seconds or int(m.baseline_metrics.duration_seconds * 0.78),
-                "median_task_duration_seconds": t.median_task_duration_seconds or int(m.baseline_metrics.duration_seconds * 0.02),
+                "max_task_duration_seconds": t.max_task_duration_seconds
+                or int(m.baseline_metrics.duration_seconds * 0.78),
+                "median_task_duration_seconds": t.median_task_duration_seconds
+                or int(m.baseline_metrics.duration_seconds * 0.02),
                 "is_severely_skewed": skew_factor > 3.0,
                 "status": skew_status,
             },
@@ -229,9 +237,7 @@ class MockCloudWatchClient:
         }
 
         # Populate sample logs for log scanning
-        self._log_streams["/aws-glue/jobs/output"] = self._generate_log_events(
-            "glue_customer360_elt", "glue", None
-        )
+        self._log_streams["/aws-glue/jobs/output"] = self._generate_log_events("glue_customer360_elt", "glue", None)
         self._log_streams["/emr-serverless/jobs/clickstream_attribution"] = self._generate_log_events(
             "emr_clickstream_attribution", "emr_serverless", None
         )
@@ -239,9 +245,7 @@ class MockCloudWatchClient:
             "databricks_financial_ledger_sync", "databricks", None
         )
 
-    def _generate_log_events(
-        self, workload_id: str, engine: str, t: TelemetrySnapshot | None
-    ) -> list[dict[str, Any]]:
+    def _generate_log_events(self, workload_id: str, engine: str, t: TelemetrySnapshot | None) -> list[dict[str, Any]]:
         """Generate realistic log entries indicating specific runtime anomalies."""
         now = int(datetime.datetime.now(datetime.UTC).timestamp() * 1000)
         logs: list[dict[str, Any]] = [
@@ -249,27 +253,72 @@ class MockCloudWatchClient:
         ]
 
         if "glue" in workload_id:
-            logs.extend([
-                {"timestamp": now - 3000000, "message": "WARN [Executor-3] Java GC pause (2800ms) exceeded threshold; frequent full collections in progress"},
-                {"timestamp": now - 2500000, "message": "WARN [PythonWorker] PySpark SerDe IPC socket buffer overflow; row-by-row UDF deserialization stalled"},
-                {"timestamp": now - 1800000, "message": "INFO [Driver] Stage 3 finished: df.count() evaluated in 1240s"},
-                {"timestamp": now - 900000, "message": "INFO [Driver] Stage 4 finished: df.show(10) evaluated in 890s"},
-            ])
+            logs.extend(
+                [
+                    {
+                        "timestamp": now - 3000000,
+                        "message": "WARN [Executor-3] Java GC pause (2800ms) exceeded threshold; frequent full collections in progress",
+                    },
+                    {
+                        "timestamp": now - 2500000,
+                        "message": "WARN [PythonWorker] PySpark SerDe IPC socket buffer overflow; row-by-row UDF deserialization stalled",
+                    },
+                    {
+                        "timestamp": now - 1800000,
+                        "message": "INFO [Driver] Stage 3 finished: df.count() evaluated in 1240s",
+                    },
+                    {
+                        "timestamp": now - 900000,
+                        "message": "INFO [Driver] Stage 4 finished: df.show(10) evaluated in 890s",
+                    },
+                ]
+            )
         elif "emr" in workload_id:
-            logs.extend([
-                {"timestamp": now - 3200000, "message": "WARN [TaskSetManager] Stage 2 contains 10,000 tasks generated by repartition(10000)"},
-                {"timestamp": now - 2800000, "message": "WARN [BlockManager] Shuffle exchange wrote 450,971,566,080 bytes across SortMergeJoin"},
-                {"timestamp": now - 2100000, "message": "WARN [ExecutorAllocationManager] Executors 68.2% idle waiting on network shuffle fetch"},
-                {"timestamp": now - 1100000, "message": "WARN [S3AFileSystem] SlowDown: 503 Service Unavailable during PUT of 80KB partition"},
-            ])
+            logs.extend(
+                [
+                    {
+                        "timestamp": now - 3200000,
+                        "message": "WARN [TaskSetManager] Stage 2 contains 10,000 tasks generated by repartition(10000)",
+                    },
+                    {
+                        "timestamp": now - 2800000,
+                        "message": "WARN [BlockManager] Shuffle exchange wrote 450,971,566,080 bytes across SortMergeJoin",
+                    },
+                    {
+                        "timestamp": now - 2100000,
+                        "message": "WARN [ExecutorAllocationManager] Executors 68.2% idle waiting on network shuffle fetch",
+                    },
+                    {
+                        "timestamp": now - 1100000,
+                        "message": "WARN [S3AFileSystem] SlowDown: 503 Service Unavailable during PUT of 80KB partition",
+                    },
+                ]
+            )
         elif "databricks" in workload_id:
-            logs.extend([
-                {"timestamp": now - 3400000, "message": "WARN [TaskSetManager] Extreme skew detected: Task 142 processed 90% of keys (tenant_id=SYSTEM_DEFAULT)"},
-                {"timestamp": now - 3000000, "message": "WARN [MemoryStore] Will not store rdd_12_142 as bytes 88583700480 exceeds partition memory limit"},
-                {"timestamp": now - 2600000, "message": "ERROR [UnsafeExternalSorter] Spilling 88583700480 bytes of data to disk on executor 7"},
-                {"timestamp": now - 2000000, "message": "WARN [GarbageCollector] GC overhead limit exceeded warning: 184 full GC cycles executed"},
-                {"timestamp": now - 800000, "message": "WARN [ClusterManager] 63 executor nodes idle for 7080s waiting for straggler Task 142"},
-            ])
+            logs.extend(
+                [
+                    {
+                        "timestamp": now - 3400000,
+                        "message": "WARN [TaskSetManager] Extreme skew detected: Task 142 processed 90% of keys (tenant_id=SYSTEM_DEFAULT)",
+                    },
+                    {
+                        "timestamp": now - 3000000,
+                        "message": "WARN [MemoryStore] Will not store rdd_12_142 as bytes 88583700480 exceeds partition memory limit",
+                    },
+                    {
+                        "timestamp": now - 2600000,
+                        "message": "ERROR [UnsafeExternalSorter] Spilling 88583700480 bytes of data to disk on executor 7",
+                    },
+                    {
+                        "timestamp": now - 2000000,
+                        "message": "WARN [GarbageCollector] GC overhead limit exceeded warning: 184 full GC cycles executed",
+                    },
+                    {
+                        "timestamp": now - 800000,
+                        "message": "WARN [ClusterManager] 63 executor nodes idle for 7080s waiting for straggler Task 142",
+                    },
+                ]
+            )
 
         logs.append({"timestamp": now - 100000, "message": f"INFO [Driver] Pipeline {workload_id} finished execution."})
         return logs
@@ -374,14 +423,16 @@ class MockCloudWatchClient:
                 curr += step
                 idx += 1
 
-            results.append({
-                "metric_name": name,
-                "namespace": namespace,
-                "dimensions": dimensions,
-                "unit": "Percent" if "Percent" in name or "Idle" in name else "Bytes",
-                "timestamps": timestamps,
-                "values": values,
-            })
+            results.append(
+                {
+                    "metric_name": name,
+                    "namespace": namespace,
+                    "dimensions": dimensions,
+                    "unit": "Percent" if "Percent" in name or "Idle" in name else "Bytes",
+                    "timestamps": timestamps,
+                    "values": values,
+                }
+            )
 
         return results
 
@@ -405,7 +456,9 @@ class MockCloudWatchClient:
 
         # Anomaly pattern matchers
         patterns = {
-            "OOM_OR_HEAP_EXHAUSTION": re.compile(r"OutOfMemoryError|GC overhead limit exceeded|MemoryStore", re.IGNORECASE),
+            "OOM_OR_HEAP_EXHAUSTION": re.compile(
+                r"OutOfMemoryError|GC overhead limit exceeded|MemoryStore", re.IGNORECASE
+            ),
             "DISK_SPILL": re.compile(r"Spill|Spilling|UnsafeExternalSorter", re.IGNORECASE),
             "GC_THRASHING": re.compile(r"GC pause|full collection|Full GC", re.IGNORECASE),
             "DATA_SKEW": re.compile(r"skew|straggler|processed 90% of keys", re.IGNORECASE),
@@ -456,13 +509,15 @@ class MockCloudWatchClient:
             timestamps = [(now - datetime.timedelta(minutes=i * 5)).isoformat() for i in range(5)]
             values = [val for _ in range(5)]
 
-            results.append({
-                "Id": q_id,
-                "Label": metric_name,
-                "Timestamps": timestamps,
-                "Values": values,
-                "StatusCode": "Complete",
-            })
+            results.append(
+                {
+                    "Id": q_id,
+                    "Label": metric_name,
+                    "Timestamps": timestamps,
+                    "Values": values,
+                    "StatusCode": "Complete",
+                }
+            )
 
         return {
             "MetricDataResults": results,

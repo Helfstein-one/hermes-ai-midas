@@ -19,6 +19,7 @@ from hermes_midas.topology import MockCostExplorerClient
 
 class AuditWorkloadResult(BaseModel):
     """Audit result for a single scanned workload file."""
+
     file_path: str
     engine: str
     anti_patterns_count: int
@@ -30,6 +31,7 @@ class AuditWorkloadResult(BaseModel):
 
 class AuditRunReport(BaseModel):
     """Aggregate summary report from an audit sweep."""
+
     scanned_workloads_count: int
     offending_workloads_count: int
     total_potential_monthly_savings: float

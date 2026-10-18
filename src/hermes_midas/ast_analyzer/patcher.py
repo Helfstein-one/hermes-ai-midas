@@ -31,7 +31,9 @@ def has_pyspark_functions_import(tree: ast.AST) -> bool:
                 if alias.name == "pyspark.sql.functions" and alias.asname in {"F", "functions"}:
                     return True
         elif isinstance(node, ast.ImportFrom):
-            if node.module == "pyspark.sql" and any(alias.name == "functions" and alias.asname == "F" for alias in node.names):
+            if node.module == "pyspark.sql" and any(
+                alias.name == "functions" and alias.asname == "F" for alias in node.names
+            ):
                 return True
             if node.module == "pyspark.sql.functions" and any(alias.name == "broadcast" for alias in node.names):
                 return True
@@ -223,12 +225,7 @@ class AstPatcher:
 
         # Ensure no required body blocks are empty
         for n in ast.walk(transformed_tree):
-            if (
-                hasattr(n, "body")
-                and isinstance(n.body, list)
-                and len(n.body) == 0
-                and not isinstance(n, ast.Module)
-            ):
+            if hasattr(n, "body") and isinstance(n.body, list) and len(n.body) == 0 and not isinstance(n, ast.Module):
                 n.body.append(ast.Pass())
 
         patched_source = ast.unparse(transformed_tree)

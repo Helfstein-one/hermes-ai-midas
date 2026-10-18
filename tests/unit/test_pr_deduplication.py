@@ -22,6 +22,7 @@ from hermes_midas.orchestrator.deduplication import (
 # Tier 1: Feature Unit Tests
 # ============================================================================
 
+
 @pytest.mark.tier1
 def test_deterministic_fingerprint_generation():
     """Tier 1: Verify SHA256 deterministic 16-character hexadecimal fingerprint."""
@@ -104,6 +105,7 @@ def test_deduplication_changed_patterns_updates_pr():
 # ============================================================================
 # Tier 2: Boundary & Corner Cases
 # ============================================================================
+
 
 @pytest.mark.tier2
 def test_fingerprint_invariant_to_anti_pattern_order():

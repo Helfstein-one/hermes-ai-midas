@@ -95,8 +95,7 @@ class GluePricingCalculator:
         waste_reduction_pct = ((base_dur - opt_dur) / base_dur) * Decimal(100) if base_dur > 0 else Decimal(0)
 
         formula = (
-            "C_Glue = Total_DPU * (T_billable / 3600) * Rate_DPU; "
-            "Savings = (C_baseline - C_optimized) * Frequency"
+            "C_Glue = Total_DPU * (T_billable / 3600) * Rate_DPU; Savings = (C_baseline - C_optimized) * Frequency"
         )
 
         return FinOpsImpact(

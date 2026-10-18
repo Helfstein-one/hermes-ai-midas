@@ -24,6 +24,7 @@ from hermes_midas.orchestrator.deduplication import (
 # 1. Fingerprint Collision Resistance Stress Tests
 # ============================================================================
 
+
 @pytest.mark.tier2
 def test_fingerprint_delimiter_collision_vulnerability():
     """Adversarial test: Verify delimiter ':' injection cannot produce identical keys."""
@@ -40,7 +41,9 @@ def test_fingerprint_pattern_comma_collision_vulnerability():
     fp_a = compute_deterministic_fingerprint("job.py", "glue", ["A,B", "C"])
     fp_b = compute_deterministic_fingerprint("job.py", "glue", ["A", "B,C"])
     fp_c = compute_deterministic_fingerprint("job.py", "glue", ["A", "B", "C"])
-    assert fp_a != fp_b and fp_b != fp_c and fp_a != fp_c, "Expected distinct fingerprints for comma-containing pattern IDs"
+    assert fp_a != fp_b and fp_b != fp_c and fp_a != fp_c, (
+        "Expected distinct fingerprints for comma-containing pattern IDs"
+    )
 
 
 @pytest.mark.tier2
@@ -63,6 +66,7 @@ def test_fingerprint_multiplicity_sensitivity():
 # ============================================================================
 # 2. PR Deduplication Matching Logic Stress Tests
 # ============================================================================
+
 
 @pytest.mark.tier2
 def test_deduplication_unanchored_branch_substring_collision():
@@ -140,6 +144,7 @@ def test_deduplication_empty_anti_patterns():
 # ============================================================================
 # 3. Branch Name Stability and Sanitization Stress Tests
 # ============================================================================
+
 
 @pytest.mark.tier2
 def test_branch_name_sanitizes_illegal_git_characters():

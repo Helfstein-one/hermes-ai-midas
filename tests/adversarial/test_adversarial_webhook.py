@@ -49,6 +49,7 @@ def valid_payload():
 # 1. HMAC Signature Stress Tests
 # ============================================================================
 
+
 @pytest.mark.tier3
 @pytest.mark.asyncio
 async def test_webhook_rejects_missing_signature(webhook_app, valid_payload):
@@ -134,16 +135,20 @@ async def test_webhook_rejects_empty_or_corrupted_signature_header(webhook_app, 
 # 2. Missing Fields & Payload Validation Stress Tests
 # ============================================================================
 
+
 @pytest.mark.tier2
 @pytest.mark.asyncio
-@pytest.mark.parametrize("missing_field", [
-    "dag_id",
-    "task_id",
-    "run_id",
-    "execution_date",
-    "engine",
-    "script_path",
-])
+@pytest.mark.parametrize(
+    "missing_field",
+    [
+        "dag_id",
+        "task_id",
+        "run_id",
+        "execution_date",
+        "engine",
+        "script_path",
+    ],
+)
 async def test_webhook_rejects_missing_required_fields(webhook_app, valid_payload, missing_field):
     """Webhook must return 400 when any required field is missing from the payload."""
     payload = dict(valid_payload)
@@ -179,12 +184,15 @@ async def test_webhook_rejects_completely_empty_json_object(webhook_app):
 
 @pytest.mark.tier2
 @pytest.mark.asyncio
-@pytest.mark.parametrize("invalid_field,invalid_val", [
-    ("execution_date", "not-a-valid-iso-date"),
-    ("metrics", "should-be-a-dictionary"),
-    ("metrics", {"duration_seconds": "not-a-float"}),
-    ("async_mode", "not-a-boolean"),
-])
+@pytest.mark.parametrize(
+    "invalid_field,invalid_val",
+    [
+        ("execution_date", "not-a-valid-iso-date"),
+        ("metrics", "should-be-a-dictionary"),
+        ("metrics", {"duration_seconds": "not-a-float"}),
+        ("async_mode", "not-a-boolean"),
+    ],
+)
 async def test_webhook_rejects_invalid_field_types(webhook_app, valid_payload, invalid_field, invalid_val):
     """Webhook must return 400 when fields have incompatible data types."""
     payload = dict(valid_payload)
@@ -221,16 +229,20 @@ async def test_webhook_rejects_malformed_raw_json(webhook_app):
 # 3. Adversarial Edge Case: Non-Mapping JSON Payloads (Vulnerability Test)
 # ============================================================================
 
+
 @pytest.mark.tier2
 @pytest.mark.asyncio
-@pytest.mark.parametrize("non_mapping_body", [
-    b"[]",
-    b"[1, 2, 3]",
-    b'"a JSON string"',
-    b"12345",
-    b"true",
-    b"null",
-])
+@pytest.mark.parametrize(
+    "non_mapping_body",
+    [
+        b"[]",
+        b"[1, 2, 3]",
+        b'"a JSON string"',
+        b"12345",
+        b"true",
+        b"null",
+    ],
+)
 async def test_webhook_handles_non_mapping_json_payloads(webhook_app, non_mapping_body):
     """Adversarial check: sending valid JSON that is not an object mapping (e.g. list, string).
 

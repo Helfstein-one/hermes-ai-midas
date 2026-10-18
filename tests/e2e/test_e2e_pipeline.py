@@ -28,7 +28,9 @@ def test_full_e2e_pipeline_on_local_git_repo(local_git_repo: Path):
 
     # Initial git commit for the workload
     subprocess.run(["git", "add", "."], cwd=local_git_repo, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "Add legacy customer360_elt job"], cwd=local_git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "Add legacy customer360_elt job"], cwd=local_git_repo, check=True, capture_output=True
+    )
 
     # 2. Ingest telemetry from FastMCP / Mock clients
     ce_client = MockCostExplorerClient()
@@ -57,6 +59,7 @@ def test_full_e2e_pipeline_on_local_git_repo(local_git_repo: Path):
     # 5. Git PR Dispatch & Artifact Emission
     pattern_ids = [m.pattern_id for m in inspection.anti_patterns]
     import hashlib
+
     raw_fp = f"{workload_in_repo}:glue:{','.join(sorted(pattern_ids))}"
     fp = hashlib.sha256(raw_fp.encode()).hexdigest()[:16]
     branch_name = f"midas/finops-glue-{fp}"
@@ -84,14 +87,23 @@ def test_full_e2e_pipeline_on_local_git_repo(local_git_repo: Path):
     pr_file.write_text(pr_content, encoding="utf-8")
 
     subprocess.run(["git", "add", "."], cwd=local_git_repo, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", f"FinOps Refactoring: Eliminate compute waste in {workload_in_repo.name}"], cwd=local_git_repo, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", f"FinOps Refactoring: Eliminate compute waste in {workload_in_repo.name}"],
+        cwd=local_git_repo,
+        check=True,
+        capture_output=True,
+    )
 
     # 6. Verify Git State
-    log_proc = subprocess.run(["git", "log", "-n", "1", "--oneline"], cwd=local_git_repo, check=True, capture_output=True, text=True)
+    log_proc = subprocess.run(
+        ["git", "log", "-n", "1", "--oneline"], cwd=local_git_repo, check=True, capture_output=True, text=True
+    )
     assert "FinOps Refactoring" in log_proc.stdout
 
     # Verify branch was created
-    branch_proc = subprocess.run(["git", "branch", "--show-current"], cwd=local_git_repo, check=True, capture_output=True, text=True)
+    branch_proc = subprocess.run(
+        ["git", "branch", "--show-current"], cwd=local_git_repo, check=True, capture_output=True, text=True
+    )
     assert branch_proc.stdout.strip() == branch_name
 
     # Verify PR artifact exists and has metadata

@@ -46,6 +46,7 @@ df_joined.write.parquet("s3://bucket/out/")
 # 1. Deterministic AST Fallback Clean Execution Verification
 # ============================================================================
 
+
 @pytest.mark.tier1
 @pytest.mark.asyncio
 async def test_deterministic_fallback_executes_cleanly_on_orphan_actions(orphan_actions_pyspark_code):
@@ -95,6 +96,7 @@ async def test_deterministic_fallback_executes_cleanly_on_unbroadcasted_join(unb
 # ============================================================================
 # 2. External Endpoint Failures and Timeout Cascades
 # ============================================================================
+
 
 @pytest.mark.tier2
 @pytest.mark.asyncio
@@ -184,6 +186,7 @@ async def test_router_cascades_to_tier3_on_connection_refused(monkeypatch, orpha
 # 3. Adversarial Edge Cases: Router Failure Modes & Bugs
 # ============================================================================
 
+
 @pytest.mark.tier2
 @pytest.mark.asyncio
 async def test_cloud_empty_choices_escapes_with_index_error(monkeypatch, orphan_actions_pyspark_code):
@@ -238,4 +241,3 @@ async def test_ollama_success_crashes_due_to_missing_validate_patch_method(monke
     assert res.tier_used == ModelTier.LOCAL_OLLAMA
     assert res.ast_valid is True
     assert "df.write.parquet" in res.optimized_code
-

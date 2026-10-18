@@ -84,7 +84,7 @@ class UnbroadcastedJoinDetector(ast.NodeVisitor):
         start = getattr(node, "lineno", 1) - 1
         end = getattr(node, "end_lineno", start + 1)
         if 0 <= start < len(self.source_lines):
-            return "\n".join(self.source_lines[start:min(end, len(self.source_lines))]).strip()
+            return "\n".join(self.source_lines[start : min(end, len(self.source_lines))]).strip()
         return ""
 
     def visit_Call(self, node: ast.Call) -> None:

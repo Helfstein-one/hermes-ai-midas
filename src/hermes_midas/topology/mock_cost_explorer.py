@@ -143,7 +143,8 @@ class MockCostExplorerClient:
         filtered = list(self._workloads.values())
         if service_filter:
             filtered = [
-                w for w in filtered
+                w
+                for w in filtered
                 if w["service"].lower() == service_filter.lower() or w["engine"].lower() == service_filter.lower()
             ]
 
@@ -318,35 +319,39 @@ class MockCostExplorerClient:
                     else:
                         keys.append(w["workload_id"])
 
-                groups.append({
-                    "Keys": keys,
-                    "Metrics": {
+                groups.append(
+                    {
+                        "Keys": keys,
+                        "Metrics": {
+                            "UnblendedCost": {
+                                "Amount": str(cost.quantize(Decimal("0.01"))),
+                                "Unit": "USD",
+                            },
+                            "UsageQuantity": {
+                                "Amount": str(qty.quantize(Decimal("0.1"))),
+                                "Unit": w["usage_unit"],
+                            },
+                        },
+                    }
+                )
+
+            results_by_time.append(
+                {
+                    "TimePeriod": time_slice,
+                    "Total": {
                         "UnblendedCost": {
-                            "Amount": str(cost.quantize(Decimal("0.01"))),
+                            "Amount": str(day_total_cost.quantize(Decimal("0.01"))),
                             "Unit": "USD",
                         },
                         "UsageQuantity": {
-                            "Amount": str(qty.quantize(Decimal("0.1"))),
-                            "Unit": w["usage_unit"],
+                            "Amount": str(day_total_qty.quantize(Decimal("0.1"))),
+                            "Unit": "N/A",
                         },
                     },
-                })
-
-            results_by_time.append({
-                "TimePeriod": time_slice,
-                "Total": {
-                    "UnblendedCost": {
-                        "Amount": str(day_total_cost.quantize(Decimal("0.01"))),
-                        "Unit": "USD",
-                    },
-                    "UsageQuantity": {
-                        "Amount": str(day_total_qty.quantize(Decimal("0.1"))),
-                        "Unit": "N/A",
-                    },
-                },
-                "Groups": groups,
-                "Estimated": False,
-            })
+                    "Groups": groups,
+                    "Estimated": False,
+                }
+            )
 
             curr = next_day
 
@@ -421,14 +426,16 @@ def create_cost_explorer_app(client: MockCostExplorerClient | None = None):
         # Health check
         if path == "/health" and method == "GET":
             body = json.dumps({"status": "healthy", "service": "midas-cost-explorer-mock"}).encode()
-            await send({
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [
-                    (b"content-type", b"application/json"),
-                    (b"content-length", str(len(body)).encode()),
-                ],
-            })
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"content-length", str(len(body)).encode()),
+                    ],
+                }
+            )
             await send({"type": "http.response.body", "body": body})
             return
 
@@ -436,14 +443,16 @@ def create_cost_explorer_app(client: MockCostExplorerClient | None = None):
         if path.startswith("/finops/top-offenders") and method == "GET":
             data = ce_client.get_top_offenders()
             body = json.dumps(data).encode()
-            await send({
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [
-                    (b"content-type", b"application/json"),
-                    (b"content-length", str(len(body)).encode()),
-                ],
-            })
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"content-length", str(len(body)).encode()),
+                    ],
+                }
+            )
             await send({"type": "http.response.body", "body": body})
             return
 
@@ -462,14 +471,16 @@ def create_cost_explorer_app(client: MockCostExplorerClient | None = None):
                 body = json.dumps({"error": str(e)}).encode()
                 status = 404
 
-            await send({
-                "type": "http.response.start",
-                "status": status,
-                "headers": [
-                    (b"content-type", b"application/json"),
-                    (b"content-length", str(len(body)).encode()),
-                ],
-            })
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": status,
+                    "headers": [
+                        (b"content-type", b"application/json"),
+                        (b"content-length", str(len(body)).encode()),
+                    ],
+                }
+            )
             await send({"type": "http.response.body", "body": body})
             return
 
@@ -516,24 +527,28 @@ def create_cost_explorer_app(client: MockCostExplorerClient | None = None):
                 )
 
             body = json.dumps(resp_data).encode()
-            await send({
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [
-                    (b"content-type", b"application/x-amz-json-1.1"),
-                    (b"content-length", str(len(body)).encode()),
-                ],
-            })
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [
+                        (b"content-type", b"application/x-amz-json-1.1"),
+                        (b"content-length", str(len(body)).encode()),
+                    ],
+                }
+            )
             await send({"type": "http.response.body", "body": body})
             return
 
         # Fallback 404
         body = b'{"error": "Not Found"}'
-        await send({
-            "type": "http.response.start",
-            "status": 404,
-            "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())],
-        })
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 404,
+                "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())],
+            }
+        )
         await send({"type": "http.response.body", "body": body})
 
     return asgi_app

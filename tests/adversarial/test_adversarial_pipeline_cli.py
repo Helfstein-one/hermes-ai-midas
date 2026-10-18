@@ -30,6 +30,7 @@ runner = CliRunner()
 # Section 1: Engine Detection Edge Cases
 # ============================================================================
 
+
 @pytest.mark.tier2
 def test_detect_engine_priority_and_fallbacks():
     """Verify engine detection heuristics on ambiguous or clean paths and contents."""
@@ -48,6 +49,7 @@ def test_detect_engine_priority_and_fallbacks():
 # ============================================================================
 # Section 2: Unified Pipeline Stress Tests
 # ============================================================================
+
 
 @pytest.mark.tier2
 @pytest.mark.asyncio
@@ -181,9 +183,7 @@ df.count()
     assert "df.count()" in job_file.read_text(encoding="utf-8")
 
     # Verify the dedicated PR branch exists and has the patch applied
-    branches = subprocess.run(
-        ["git", "branch"], cwd=repo_dir, check=True, capture_output=True, text=True
-    ).stdout
+    branches = subprocess.run(["git", "branch"], cwd=repo_dir, check=True, capture_output=True, text=True).stdout
     assert result.branch_name in branches
 
 
@@ -209,6 +209,7 @@ async def test_pipeline_unicode_and_spaces_in_path(tmp_path: Path):
 # ============================================================================
 # Section 3: CLI Edge Case Stress Tests
 # ============================================================================
+
 
 @pytest.mark.tier1
 def test_cli_help():
@@ -321,6 +322,7 @@ def test_cron_auditor_fingerprint_delimiter_collision_vulnerability():
     causing fingerprint collisions between different file paths and engine names.
     """
     import hashlib
+
     # Case 1: path="workloads:glue", engine="etl", pattern="P1"
     raw_a = f"{Path('workloads:glue')}:etl:P1"
     fp_a = hashlib.sha256(raw_a.encode("utf-8")).hexdigest()[:16]

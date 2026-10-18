@@ -24,6 +24,7 @@ test:
 
 lint:
 	$(RUFF) check
+	$(RUFF) format --check
 
 fmt:
 	$(RUFF) format

@@ -259,8 +259,8 @@ Ações executadas durante o script sem persistência geram recomputação total
 df_raw = spark.read.parquet("s3://lake/raw/")
 df_clean = df_raw.filter(df_raw.status == "ACTIVE")
 print(f"Total registros: {df_clean.count()}")  # Trigger 1
-df_clean.show(10)                             # Trigger 2
-df_clean.write.parquet("s3://lake/curated/")   # Trigger 3
+df_clean.show(10)  # Trigger 2
+df_clean.write.parquet("s3://lake/curated/")  # Trigger 3
 
 # ✅ DEPOIS (Otimizado via AST: Remoção de orphan actions)
 df_raw = spark.read.parquet("s3://lake/raw/")
@@ -276,6 +276,7 @@ df_joined = df_large_fact.join(df_dim_small, on="category_id", how="inner")
 
 # ✅ DEPOIS (BroadcastHashJoin injetado via AST)
 import pyspark.sql.functions as F
+
 df_joined = df_large_fact.join(F.broadcast(df_dim_small), on="category_id", how="inner")
 ```
 
@@ -296,10 +297,13 @@ Funções decoradas com `@udf` forçam a serialização de dados da JVM para o p
 @udf(returnType=StringType())
 def format_sku(val):
     return val.strip().upper() if val else "UNKNOWN"
+
+
 df = df.withColumn("sku_clean", format_sku(df["raw_sku"]))
 
 # ✅ DEPOIS (Expressão Nativa Vetorizada Spark SQL Catalyst)
 import pyspark.sql.functions as F
+
 df = df.withColumn("sku_clean", F.coalesce(F.upper(F.trim(F.col("raw_sku"))), F.lit("UNKNOWN")))
 ```
 
@@ -557,6 +561,7 @@ Adicione o callback de `post_execute` nas suas DAGs do Airflow para notificar o 
 ```python
 import hmac, hashlib, json, requests
 
+
 def midas_post_execute_hook(context):
     payload = {
         "dag_id": context["dag"].dag_id,
@@ -564,14 +569,14 @@ def midas_post_execute_hook(context):
         "run_id": context["run_id"],
         "execution_date": context["execution_date"].isoformat(),
         "engine": "glue",  # ou emr_serverless, emr_ec2, databricks
-        "script_path": "dags/scripts/customer_elt.py"
+        "script_path": "dags/scripts/customer_elt.py",
     }
     body = json.dumps(payload)
     sig = "sha256=" + hmac.new(b"midas-secret-token", body.encode(), hashlib.sha256).hexdigest()
     requests.post(
         "http://internal-midas-alb.vpc.local/api/v1/triggers/airflow",
         data=body,
-        headers={"Content-Type": "application/json", "X-Airflow-Signature": sig}
+        headers={"Content-Type": "application/json", "X-Airflow-Signature": sig},
     )
 ```
 

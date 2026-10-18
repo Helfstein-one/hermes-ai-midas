@@ -100,4 +100,3 @@ __all__ = [
     "set_cloudwatch_client",
     "set_cost_explorer_client",
 ]
-

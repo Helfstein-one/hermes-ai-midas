@@ -26,6 +26,7 @@ from hermes_midas.ast_analyzer import (
 # Tier 1: Feature Unit Tests
 # ============================================================================
 
+
 @pytest.mark.tier1
 def test_orphan_action_detector_identifies_bare_actions(orphan_actions_code: str):
     """Tier 1: Detect bare DataFrame action expressions (.count, .collect, .show)."""
@@ -125,10 +126,11 @@ def test_ast_validator_passes_valid_code(clean_pyspark_code: str):
 # Tier 2: Boundary & Corner Cases
 # ============================================================================
 
+
 @pytest.mark.tier2
 def test_orphan_action_inside_assert_not_flagged():
     """Tier 2: Action calls inside assert statements must NOT be flagged as orphan."""
-    code = 'assert df.count() > 0\nassert df.first() is not None\n'
+    code = "assert df.count() > 0\nassert df.first() is not None\n"
     detector = OrphanActionDetector(code.splitlines())
     matches = detector.run(ast.parse(code))
     assert len(matches) == 0
@@ -137,7 +139,7 @@ def test_orphan_action_inside_assert_not_flagged():
 @pytest.mark.tier2
 def test_orphan_action_inside_return_not_flagged():
     """Tier 2: Action calls returned from functions must NOT be flagged as orphan."""
-    code = 'def get_size(df):\n    return df.count()\n'
+    code = "def get_size(df):\n    return df.count()\n"
     detector = OrphanActionDetector(code.splitlines())
     matches = detector.run(ast.parse(code))
     assert len(matches) == 0
@@ -155,10 +157,10 @@ def test_orphan_action_active_assignment_not_flagged():
 @pytest.mark.tier2
 def test_already_broadcasted_join_not_flagged():
     """Tier 2: Joins already wrapped in F.broadcast or broadcast must NOT be flagged."""
-    code = '''from pyspark.sql import functions as F
+    code = """from pyspark.sql import functions as F
 df_fact.join(F.broadcast(dim_users), on="id")
 df_fact.join(broadcast(dim_status), on="id")
-'''
+"""
     detector = UnbroadcastedJoinDetector(code.splitlines())
     matches = detector.run(ast.parse(code))
     assert len(matches) == 0
@@ -243,11 +245,7 @@ def test_ast_patcher_match_case_support():
 @pytest.mark.tier2
 def test_ast_patcher_clean_conditionals_no_spurious_else_pass():
     """Verify AST patcher does not inject spurious 'else: pass' or 'finally: pass' on clean conditionals."""
-    code = (
-        "def process(df, condition):\n"
-        "    if condition:\n"
-        "        df.count()\n"
-    )
+    code = "def process(df, condition):\n    if condition:\n        df.count()\n"
     analyzer = ASTAnalyzer()
     res = analyzer.inspect(code, "conditional.py")
     assert res.is_valid is True

@@ -63,7 +63,9 @@ class DeterministicModelRouter:
                     optimized = data.get("response", "").strip()
                     if optimized:
                         diff = AstPatcher.generate_diff(request.original_code, optimized, request.file_path)
-                        val = self.validator.validate(request.original_code, optimized, diff=diff, file_path=request.file_path)
+                        val = self.validator.validate(
+                            request.original_code, optimized, diff=diff, file_path=request.file_path
+                        )
                         if val.is_valid:
                             return RefactoringResponse(
                                 optimized_code=optimized,
@@ -87,7 +89,11 @@ class DeterministicModelRouter:
         else:
             try:
                 # Attempt call to Groq or Gemini OpenAI-compatible API
-                endpoint = "https://api.groq.com/openai/v1/chat/completions" if groq_key else "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+                endpoint = (
+                    "https://api.groq.com/openai/v1/chat/completions"
+                    if groq_key
+                    else "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+                )
                 api_key = groq_key or gemini_key
                 model_name = "llama-3.3-70b-versatile" if groq_key else "gemini-2.5-flash"
                 async with httpx.AsyncClient(timeout=self.timeout_seconds) as client:
@@ -112,7 +118,9 @@ class DeterministicModelRouter:
                             return self._execute_tier_3(request, fallback_chain)
                         optimized = choices[0].get("message", {}).get("content", "").strip()
                         diff = AstPatcher.generate_diff(request.original_code, optimized, request.file_path)
-                        val = self.validator.validate(request.original_code, optimized, diff=diff, file_path=request.file_path)
+                        val = self.validator.validate(
+                            request.original_code, optimized, diff=diff, file_path=request.file_path
+                        )
                         if val.is_valid:
                             return RefactoringResponse(
                                 optimized_code=optimized,
@@ -130,9 +138,7 @@ class DeterministicModelRouter:
         # Tier 3 Deterministic Fallback
         return self._execute_tier_3(request, fallback_chain)
 
-    def _execute_tier_3(
-        self, request: RefactoringRequest, fallback_chain: list[str]
-    ) -> RefactoringResponse:
+    def _execute_tier_3(self, request: RefactoringRequest, fallback_chain: list[str]) -> RefactoringResponse:
         """Execute deterministic AST patching with validation."""
         inspection = self.analyzer.inspect(request.original_code, request.file_path)
 

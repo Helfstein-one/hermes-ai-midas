@@ -48,12 +48,12 @@ class WorkloadEvaluator:
         24 runs/day, 720 runs/month.
         """
         base_spec = GlueResourceSpec(worker_type="G.2X", num_workers=15)  # 15 * 2 = 30 DPU
-        opt_spec = GlueResourceSpec(worker_type="G.2X", num_workers=5)    # 5 * 2 = 10 DPU
+        opt_spec = GlueResourceSpec(worker_type="G.2X", num_workers=5)  # 5 * 2 = 10 DPU
         return self.glue_calc.calculate_roi(
             baseline_spec=base_spec,
             baseline_duration_seconds=Decimal(4500),  # 75 min
             optimized_spec=opt_spec,
-            optimized_duration_seconds=Decimal(720),   # 12 min
+            optimized_duration_seconds=Decimal(720),  # 12 min
             runs_per_day=Decimal(24),
             runs_per_month=Decimal(720),
         )
@@ -106,7 +106,7 @@ class WorkloadEvaluator:
             baseline_spec=base_spec,
             baseline_duration_seconds=Decimal(12600),  # 210 min
             optimized_spec=opt_spec,
-            optimized_duration_seconds=Decimal(1321),   # 22 min 1s
+            optimized_duration_seconds=Decimal(1321),  # 22 min 1s
             runs_per_day=Decimal(1),
             runs_per_month=Decimal(30),
             vcpu_rate=Decimal("0.05238"),
@@ -143,7 +143,7 @@ class WorkloadEvaluator:
             baseline_spec=base_spec,
             baseline_duration_seconds=Decimal(9000),  # 150 min
             optimized_spec=opt_spec,
-            optimized_duration_seconds=Decimal(1080), # 18 min
+            optimized_duration_seconds=Decimal(1080),  # 18 min
             runs_per_day=Decimal(1),
             runs_per_month=Decimal(30),
             quantize_per_run=True,

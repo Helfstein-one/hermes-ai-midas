@@ -50,6 +50,7 @@ from hermes_midas.topology.seed_loader import SeedDataLoader
 # Section 1: AST Analyzer Empirical Stress Tests
 # ============================================================================
 
+
 class TestASTAnalyzerEmpirical:
     """Stress tests and empirical validation of PySpark AST analysis and patching."""
 
@@ -164,7 +165,7 @@ df_enriched.write.mode("overwrite").parquet("s3://lake/curated/")
 
     def test_ast_clean_code_invariance(self):
         """Verify already optimal code produces no diff and remains valid."""
-        clean_code = '''import pyspark.sql.functions as F
+        clean_code = """import pyspark.sql.functions as F
 
 def optimal_job(spark):
     df = spark.read.parquet("s3://lake/events")
@@ -172,7 +173,7 @@ def optimal_job(spark):
     df_joined = df.join(F.broadcast(dim), "user_id", "inner")
     df_opt = df_joined.coalesce(64)
     df_opt.write.mode("overwrite").partitionBy("event_date").parquet("s3://lake/curated")
-'''
+"""
         analyzer = ASTAnalyzer()
         result = analyzer.inspect(clean_code, file_path="clean.py")
 
@@ -183,7 +184,7 @@ def optimal_job(spark):
 
     def test_ast_empty_block_pass_injection(self):
         """Verify removing orphan actions from if/else or try/except inserts pass statements."""
-        code_with_orphan_in_blocks = '''def run(df):
+        code_with_orphan_in_blocks = """def run(df):
     if df is not None:
         df.count()
     else:
@@ -192,7 +193,7 @@ def optimal_job(spark):
         df.collect()
     except Exception:
         df.first()
-'''
+"""
         analyzer = ASTAnalyzer()
         result = analyzer.inspect(code_with_orphan_in_blocks)
 
@@ -203,11 +204,11 @@ def optimal_job(spark):
 
     def test_ast_already_broadcasted_join_idempotency(self):
         """Verify joining with already broadcasted dimension does not re-wrap."""
-        code = '''import pyspark.sql.functions as F
+        code = """import pyspark.sql.functions as F
 df = spark.read.parquet("s3://events")
 dim = spark.read.parquet("s3://dim_customers")
 df_joined = df.join(F.broadcast(dim), "id", "inner")
-'''
+"""
         analyzer = ASTAnalyzer()
         matches = analyzer.analyze(code)
         # Should not detect unbroadcasted join
@@ -216,10 +217,10 @@ df_joined = df.join(F.broadcast(dim), "id", "inner")
 
     def test_ast_custom_dimension_identifiers(self):
         """Verify custom dimension set flags joins against custom table names."""
-        code = '''df_sales = spark.read.parquet("s3://sales")
+        code = """df_sales = spark.read.parquet("s3://sales")
 auxiliary_data = spark.read.parquet("s3://aux")
 df_joined = df_sales.join(auxiliary_data, "key", "left")
-'''
+"""
         analyzer_default = ASTAnalyzer()
         matches_default = analyzer_default.analyze(code)
         assert len(matches_default) == 0
@@ -234,6 +235,7 @@ df_joined = df_sales.join(auxiliary_data, "key", "left")
 # ============================================================================
 # Section 2: FinOps Calculator Independent Decimal Oracle
 # ============================================================================
+
 
 def oracle_glue_cost(
     worker_type: str,
@@ -297,13 +299,16 @@ def oracle_databricks_cost(
 class TestFinOpsCalculatorEmpirical:
     """Stress tests verifying FinOps calculator formulas against independent decimal calculations."""
 
-    @pytest.mark.parametrize("worker_type,num_workers,is_flex,dur_base,dur_opt,runs_day", [
-        ("G.2X", 10, False, 1200, 400, 24),
-        ("G.1X", 20, True, 3600, 1800, 4),
-        ("G.4X", 5, False, 600, 120, 12),
-        ("G.8X", 2, False, 45, 10, 1),      # Tests under-60s floor
-        ("standard", 15, True, 75.4, 60.1, 8),  # Tests ceil rounding
-    ])
+    @pytest.mark.parametrize(
+        "worker_type,num_workers,is_flex,dur_base,dur_opt,runs_day",
+        [
+            ("G.2X", 10, False, 1200, 400, 24),
+            ("G.1X", 20, True, 3600, 1800, 4),
+            ("G.4X", 5, False, 600, 120, 12),
+            ("G.8X", 2, False, 45, 10, 1),  # Tests under-60s floor
+            ("standard", 15, True, 75.4, 60.1, 8),  # Tests ceil rounding
+        ],
+    )
     def test_finops_glue_against_independent_decimal_oracle(
         self, worker_type, num_workers, is_flex, dur_base, dur_opt, runs_day
     ):
@@ -328,12 +333,15 @@ class TestFinOpsCalculatorEmpirical:
         assert impact.monthly_savings_usd == monthly.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         assert impact.annual_savings_usd == annual.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    @pytest.mark.parametrize("executors,vcpu,ram,storage,dur_base,dur_opt,runs_day", [
-        (16, Decimal(4), Decimal(16), Decimal(20), 750, 250, 4),
-        (32, Decimal(8), Decimal(32), Decimal(50), 1800, 900, 2),
-        (8, Decimal(2), Decimal(8), Decimal(80), 30, 15, 10),      # Tests floor
-        (4, Decimal(4), Decimal(16), Decimal(20), 121.2, 60.5, 6),  # Fractional seconds
-    ])
+    @pytest.mark.parametrize(
+        "executors,vcpu,ram,storage,dur_base,dur_opt,runs_day",
+        [
+            (16, Decimal(4), Decimal(16), Decimal(20), 750, 250, 4),
+            (32, Decimal(8), Decimal(32), Decimal(50), 1800, 900, 2),
+            (8, Decimal(2), Decimal(8), Decimal(80), 30, 15, 10),  # Tests floor
+            (4, Decimal(4), Decimal(16), Decimal(20), 121.2, 60.5, 6),  # Fractional seconds
+        ],
+    )
     def test_finops_emr_against_independent_decimal_oracle(
         self, executors, vcpu, ram, storage, dur_base, dur_opt, runs_day
     ):
@@ -366,13 +374,16 @@ class TestFinOpsCalculatorEmpirical:
         assert impact.monthly_savings_usd == monthly.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         assert impact.annual_savings_usd == annual.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
-    @pytest.mark.parametrize("node_type,workers,tier,dur_base,dur_opt,runs_day", [
-        ("r5.4xlarge", 63, "jobs_enterprise", 7200, 1800, 1),
-        ("m5.xlarge", 8, "jobs_standard", 3600, 1200, 3),
-        ("i3.2xlarge", 16, "all_purpose_standard", 1800, 600, 2),
-        ("c5.2xlarge", 4, "serverless_jobs", 900, 300, 12),
-        ("i3en.3xlarge", 10, "jobs_enterprise", 45, 20, 1),  # Floor
-    ])
+    @pytest.mark.parametrize(
+        "node_type,workers,tier,dur_base,dur_opt,runs_day",
+        [
+            ("r5.4xlarge", 63, "jobs_enterprise", 7200, 1800, 1),
+            ("m5.xlarge", 8, "jobs_standard", 3600, 1200, 3),
+            ("i3.2xlarge", 16, "all_purpose_standard", 1800, 600, 2),
+            ("c5.2xlarge", 4, "serverless_jobs", 900, 300, 12),
+            ("i3en.3xlarge", 10, "jobs_enterprise", 45, 20, 1),  # Floor
+        ],
+    )
     def test_finops_databricks_against_independent_decimal_oracle(
         self, node_type, workers, tier, dur_base, dur_opt, runs_day
     ):
@@ -451,6 +462,7 @@ class TestFinOpsCalculatorEmpirical:
 # ============================================================================
 # Section 3: FastMCP Tool Server Programmatic Invocation Tests
 # ============================================================================
+
 
 class TestFastMCPToolsEmpirical:
     """Empirically test programmatic tool dispatch and telemetry return across all FastMCP servers."""

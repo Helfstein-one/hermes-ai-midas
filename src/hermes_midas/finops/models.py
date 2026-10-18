@@ -14,6 +14,7 @@ from hermes_midas.finops.rates import (
 
 class ComputePlatform(StrEnum):
     """Supported cloud distributed compute engines."""
+
     GLUE = "glue"
     EMR_SERVERLESS = "emr_serverless"
     DATABRICKS = "databricks"
@@ -22,6 +23,7 @@ class ComputePlatform(StrEnum):
 @dataclass
 class GlueResourceSpec:
     """Resource configuration for AWS Glue jobs."""
+
     worker_type: str = "G.2X"
     num_workers: int = 10
     is_flex: bool = False
@@ -36,6 +38,7 @@ class GlueResourceSpec:
 @dataclass
 class EmrResourceSpec:
     """Resource configuration for AWS EMR Serverless applications."""
+
     driver_vcpu: Decimal = Decimal(2)
     driver_memory_gb: Decimal = Decimal(8)
     executor_count: int = 16
@@ -57,6 +60,7 @@ class EmrResourceSpec:
 @dataclass
 class DatabricksResourceSpec:
     """Resource configuration for Databricks classic or serverless clusters."""
+
     node_type: str = "i3.xlarge"
     num_workers: int = 8
     tier: str = "jobs_enterprise"
@@ -71,6 +75,7 @@ class DatabricksResourceSpec:
 @dataclass
 class RunCostBreakdown:
     """Granular cost breakdown for a single pipeline run."""
+
     engine: str
     duration_seconds: Decimal
     billable_seconds: Decimal
@@ -92,6 +97,7 @@ class RunCostBreakdown:
 @dataclass
 class FinOpsImpact:
     """Deterministic financial ROI and compute waste metrics without LLM hallucination."""
+
     engine: str
     baseline_cost_usd: Decimal
     optimized_cost_usd: Decimal

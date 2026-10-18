@@ -344,8 +344,12 @@ class RemoteRestGitProvider(GitProvider):
         provider_type: str = "auto",
         timeout: float = 10.0,
     ) -> None:
-        self.base_url = (base_url or os.environ.get("GITEA_URL") or os.environ.get("GITHUB_API_URL") or "http://localhost:3000").rstrip("/")
-        self.token = token or os.environ.get("GITEA_TOKEN") or os.environ.get("GITHUB_TOKEN") or "midas-admin-token-12345"
+        self.base_url = (
+            base_url or os.environ.get("GITEA_URL") or os.environ.get("GITHUB_API_URL") or "http://localhost:3000"
+        ).rstrip("/")
+        self.token = (
+            token or os.environ.get("GITEA_TOKEN") or os.environ.get("GITHUB_TOKEN") or "midas-admin-token-12345"
+        )
         self.provider_type = provider_type
         self.timeout = timeout
 
@@ -507,7 +511,8 @@ class RemoteRestGitProvider(GitProvider):
                 data = pr_resp.json()
                 return {
                     "status": "CREATED",
-                    "pr_url": data.get("html_url") or f"{self.base_url}/{owner}/{repo_name}/pulls/{data.get('number', 1)}",
+                    "pr_url": data.get("html_url")
+                    or f"{self.base_url}/{owner}/{repo_name}/pulls/{data.get('number', 1)}",
                     "pr_number": data.get("number", 1),
                     "branch": branch,
                     "target_branch": branch,

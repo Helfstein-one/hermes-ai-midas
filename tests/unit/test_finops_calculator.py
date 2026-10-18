@@ -27,6 +27,7 @@ from hermes_midas.finops.rates import GLUE_MINIMUM_BILLABLE_SECONDS
 # Tier 1: Feature Unit Tests
 # ============================================================================
 
+
 @pytest.mark.tier1
 def test_glue_pricing_calculator_standard_formula():
     """Tier 1: Verify exact AWS Glue standard DPU pricing ($0.44/DPU-hr)."""
@@ -114,6 +115,7 @@ def test_seed_workload_evaluator_databricks_ledger_roi():
 # ============================================================================
 # Tier 2: Boundary & Corner Cases
 # ============================================================================
+
 
 @pytest.mark.tier2
 def test_billable_seconds_enforces_60_second_floor():

@@ -21,11 +21,10 @@ except ImportError:
     from fastmcp import FastMCP
 
 
-
-
 # ============================================================================
 # Contract Schema Definitions (Authoritative R3 Contract)
 # ============================================================================
+
 
 class TopOffendersRequest(BaseModel):
     dimension: str = Field(default="JobName", description="Grouping dimension: JobName | Service | Engine")
@@ -75,6 +74,7 @@ def get_git_repo_mcp_server() -> FastMCP:
 # ============================================================================
 # Tier 1: Feature Unit Tests
 # ============================================================================
+
 
 @pytest.mark.tier1
 def test_cost_explorer_mcp_server_tools_registered():
@@ -136,6 +136,7 @@ async def test_fastmcp_cloudwatch_tool_execution():
 # ============================================================================
 # Tier 2: Boundary & Corner Cases
 # ============================================================================
+
 
 @pytest.mark.tier2
 def test_pydantic_schema_validation_top_offenders_bounds():

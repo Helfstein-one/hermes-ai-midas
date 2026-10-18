@@ -41,6 +41,7 @@ dev = [
     "pytest-asyncio>=0.24.0",
     "pytest-mock>=3.14.0",
     "pytest-cov>=5.0.0",
+    "ruff>=0.7.0",
 ]
 
 [project.scripts]
@@ -73,7 +74,7 @@ omit = ["tests/*"]
 [tool.ruff]
 target-version = "py311"
 line-length = 120
-extend-exclude = [".midas"]
+extend-exclude = [".midas", "workloads"]
 
 [tool.ruff.lint]
 select = [
@@ -93,4 +94,13 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["hermes_midas"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-mock>=3.14.0",
+    "pytest-cov>=5.0.0",
+    "ruff>=0.7.0",
+]
 

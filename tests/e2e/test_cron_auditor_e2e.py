@@ -19,6 +19,7 @@ from hermes_midas.orchestrator.cron_auditor import (
 # Tier 3 & Tier 4: Cron Auditor Tests
 # ============================================================================
 
+
 @pytest.mark.tier3
 def test_cron_auditor_savings_threshold_filtering(tmp_path: Path):
     """Tier 3: Workloads with savings below minimum threshold ($20/mo) are suppressed."""

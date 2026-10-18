@@ -23,6 +23,7 @@ from hermes_midas.orchestrator.webhook import (
 # Tier 3: HMAC Signature Tests
 # ============================================================================
 
+
 @pytest.mark.tier3
 @pytest.mark.asyncio
 async def test_airflow_trigger_rejects_missing_or_bad_signature():
@@ -57,6 +58,7 @@ async def test_airflow_trigger_rejects_missing_or_bad_signature():
 # ============================================================================
 # Tier 4: Real-World Webhook Inbound Dispatch E2E
 # ============================================================================
+
 
 @pytest.mark.tier4
 @pytest.mark.asyncio

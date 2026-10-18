@@ -38,9 +38,7 @@ def guard_network_sockets():
         host = address[0] if isinstance(address, tuple) and address else address
         if isinstance(host, str) and (host in ALLOWED_HOSTS or host.startswith("127.") or host.startswith("/")):
             return original_connect(self, address)
-        raise NetworkBlockedError(
-            f"External network connection to {address} blocked by offline test guard."
-        )
+        raise NetworkBlockedError(f"External network connection to {address} blocked by offline test guard.")
 
     socket.socket.connect = guarded_connect
     yield
@@ -53,16 +51,19 @@ def clean_midas_artifacts():
     midas_dir = Path(".midas")
     if midas_dir.exists():
         import shutil
+
         shutil.rmtree(midas_dir, ignore_errors=True)
     yield
     if midas_dir.exists():
         import shutil
+
         shutil.rmtree(midas_dir, ignore_errors=True)
 
 
 # ============================================================================
 # PySpark Code Sample Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def clean_pyspark_code() -> str:
@@ -90,7 +91,7 @@ df_final.write.partitionBy("order_year", "order_month").mode("overwrite").parque
 @pytest.fixture
 def orphan_actions_code() -> str:
     """PySpark script with unassigned / discarded eager actions."""
-    return '''from pyspark.sql import SparkSession
+    return """from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.appName("OrphanActionETL").getOrCreate()
 
@@ -112,13 +113,13 @@ print(f"Total rows: {active_count}")
 assert df.count() > 0
 
 df.write.mode("overwrite").parquet("s3://bucket/out/")
-'''
+"""
 
 
 @pytest.fixture
 def unbroadcasted_join_code() -> str:
     """PySpark script joining with a dimension table without broadcast hint."""
-    return '''from pyspark.sql import SparkSession
+    return """from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.appName("JoinETL").getOrCreate()
 
@@ -131,13 +132,13 @@ df_res1 = df_fact_orders.join(dim_campaigns, on="campaign_id")
 df_res2 = df_res1.join(lookup_status, on="status_id", how="left")
 
 df_res2.write.parquet("s3://bucket/output/")
-'''
+"""
 
 
 @pytest.fixture
 def suboptimal_partition_code() -> str:
     """PySpark script with excessive repartitioning and missing partitionBy on write."""
-    return '''from pyspark.sql import SparkSession
+    return """from pyspark.sql import SparkSession
 
 spark = SparkSession.builder.appName("PartitionETL").getOrCreate()
 
@@ -151,13 +152,13 @@ df_single = df_repart.coalesce(1)
 
 # Missing partitionBy on final write with date keys
 df_single.write.mode("overwrite").parquet("s3://bucket/output/")
-'''
+"""
 
 
 @pytest.fixture
 def legacy_udf_code() -> str:
     """PySpark script using legacy Python @udf instead of native expressions."""
-    return '''from pyspark.sql import SparkSession
+    return """from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf
 from pyspark.sql.types import StringType
 
@@ -172,21 +173,22 @@ def format_customer_tier(score):
 df = spark.read.parquet("s3://bucket/data/")
 df_enriched = df.withColumn("tier", format_customer_tier(df["raw_score"]))
 df_enriched.write.parquet("s3://bucket/out/")
-'''
+"""
 
 
 @pytest.fixture
 def syntax_error_code() -> str:
     """Malformed Python code with syntax error."""
-    return '''from pyspark.sql import SparkSession
+    return """from pyspark.sql import SparkSession
 def broken_syntax(
     df = spark.read.parquet("s3://unclosed_bracket"
-'''
+"""
 
 
 # ============================================================================
 # Git Repository Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def local_git_repo(tmp_path: Path) -> Path:
@@ -213,6 +215,7 @@ def local_git_repo(tmp_path: Path) -> Path:
 # ============================================================================
 # Telemetry & Pricing Fixtures
 # ============================================================================
+
 
 @pytest.fixture
 def sample_glue_telemetry() -> dict:

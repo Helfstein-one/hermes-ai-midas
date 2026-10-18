@@ -25,6 +25,7 @@ from hermes_midas.topology import MockCloudWatchClient, MockCostExplorerClient
 
 class PipelineResult(BaseModel):
     """Result of end-to-end workload optimization."""
+
     status: str
     workload_name: str
     script_path: str
@@ -160,7 +161,8 @@ async def async_optimize_workload(
             pr_action=PRAction.SKIPPED_DEDUPLICATED,
             fingerprint=fp,
             branch_name=branch_name,
-            pr_url=getattr(matched_pr, "html_url", None) or f"file://{repo_p}/.midas/pull_requests/pr_{getattr(matched_pr, 'id', 1)}.md",
+            pr_url=getattr(matched_pr, "html_url", None)
+            or f"file://{repo_p}/.midas/pull_requests/pr_{getattr(matched_pr, 'id', 1)}.md",
             pr_number=getattr(matched_pr, "id", 1),
             anti_patterns_count=inspection.anti_patterns_count,
             monthly_savings_usd=monthly_savings,

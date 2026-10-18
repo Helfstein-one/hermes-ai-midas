@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 class ModelTier(StrEnum):
     """Execution tiers for the optimization model router."""
+
     LOCAL_OLLAMA = "local_ollama"
     FREE_TIER_CLOUD = "free_tier_cloud"
     DETERMINISTIC_OFFLINE = "deterministic_offline"
@@ -17,6 +18,7 @@ class ModelTier(StrEnum):
 
 class RefactoringRequest(BaseModel):
     """Input request for code optimization."""
+
     file_path: str
     original_code: str
     anti_patterns: list[dict[str, Any]] = Field(default_factory=list)
@@ -27,6 +29,7 @@ class RefactoringRequest(BaseModel):
 
 class RefactoringResponse(BaseModel):
     """Output response from code optimization router."""
+
     optimized_code: str
     diff: str
     explanation: str

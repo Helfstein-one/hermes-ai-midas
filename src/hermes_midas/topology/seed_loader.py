@@ -158,12 +158,27 @@ class SeedDataLoader:
             return False
 
         try:
-            s3 = boto3.client("s3", endpoint_url=endpoint_url, region_name=region_name,
-                              aws_access_key_id="mock_key", aws_secret_access_key="mock_secret")
-            glue = boto3.client("glue", endpoint_url=endpoint_url, region_name=region_name,
-                                aws_access_key_id="mock_key", aws_secret_access_key="mock_secret")
-            logs = boto3.client("logs", endpoint_url=endpoint_url, region_name=region_name,
-                                aws_access_key_id="mock_key", aws_secret_access_key="mock_secret")
+            s3 = boto3.client(
+                "s3",
+                endpoint_url=endpoint_url,
+                region_name=region_name,
+                aws_access_key_id="mock_key",
+                aws_secret_access_key="mock_secret",
+            )
+            glue = boto3.client(
+                "glue",
+                endpoint_url=endpoint_url,
+                region_name=region_name,
+                aws_access_key_id="mock_key",
+                aws_secret_access_key="mock_secret",
+            )
+            logs = boto3.client(
+                "logs",
+                endpoint_url=endpoint_url,
+                region_name=region_name,
+                aws_access_key_id="mock_key",
+                aws_secret_access_key="mock_secret",
+            )
 
             # 1. Create S3 buckets
             buckets = [
@@ -229,7 +244,9 @@ def main() -> None:
     if args.summary or (not args.export and not args.import_bundle and not args.provision_moto):
         print(f"Discovered {len(loader.list_manifests())} seed workloads:")
         for m in loader.list_manifests():
-            print(f"  - [{m.engine.upper()}] {m.workload_id} -> Baseline: ${m.baseline_metrics.monthly_spend_usd:,.2f}/mo, Savings: ${m.optimized_metrics.monthly_savings_usd:,.2f}/mo")
+            print(
+                f"  - [{m.engine.upper()}] {m.workload_id} -> Baseline: ${m.baseline_metrics.monthly_spend_usd:,.2f}/mo, Savings: ${m.optimized_metrics.monthly_savings_usd:,.2f}/mo"
+            )
 
     if args.export:
         loader.export_seed_bundle(args.export)

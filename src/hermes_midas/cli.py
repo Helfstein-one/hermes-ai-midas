@@ -37,6 +37,7 @@ def serve(
 ):
     """Launch the FastAPI Airflow Webhook trigger server."""
     import uvicorn
+
     console.print(f"[bold green]Starting Midas Trigger Server on {host}:{port}...[/bold green]")
     uvicorn.run("hermes_midas.orchestrator.webhook:app", host=host, port=port, workers=workers)
 
@@ -68,7 +69,9 @@ def audit(
         scheduler = auditor.start_scheduler(
             repo_dir=repo,
             cron_expr=cron_expr,
-            callback=lambda r: console.print(f"[green]Audit tick complete: {r.offending_workloads_count} offenders found.[/green]"),
+            callback=lambda r: console.print(
+                f"[green]Audit tick complete: {r.offending_workloads_count} offenders found.[/green]"
+            ),
         )
         try:
             while True:
@@ -78,7 +81,9 @@ def audit(
             console.print("[yellow]Auditor daemon stopped.[/yellow]")
             return
 
-    console.print(f"[bold]Scanning repository: [cyan]{repo}[/cyan] (Threshold: [green]${threshold:.2f}/mo[/green])...[/bold]")
+    console.print(
+        f"[bold]Scanning repository: [cyan]{repo}[/cyan] (Threshold: [green]${threshold:.2f}/mo[/green])...[/bold]"
+    )
     report = auditor.scan_repository(repo)
 
     table = Table(title="🏆 Hermes Midas FinOps Audit Summary")
@@ -129,7 +134,9 @@ def analyze(
         console.print(f"# AST Analysis: `{script}`\n")
         console.print(f"- **Anti-patterns detected**: {res.anti_patterns_count}")
         for ap in res.anti_patterns:
-            console.print(f"- **{ap.pattern_name}** ({ap.pattern_id}) at lines {ap.line_start}-{ap.line_end}: {ap.description}")
+            console.print(
+                f"- **{ap.pattern_name}** ({ap.pattern_id}) at lines {ap.line_start}-{ap.line_end}: {ap.description}"
+            )
         return
 
     # Terminal output
@@ -158,41 +165,48 @@ def calculate(
 ):
     """Run deterministic FinOps pricing calculator for workload parameters."""
     from decimal import Decimal
+
     calc = FinOpsCalculator()
     eng = engine.lower()
     if eng == "glue":
         spec = GlueResourceSpec(worker_type="G.2X", num_workers=int(units))
         breakdown = calc.glue.calculate_run_cost(spec, Decimal(str(duration_secs)))
-        console.print(Panel(
-            f"[bold]AWS Glue Run Cost[/bold]\n"
-            f"DPUs: {spec.total_dpu}\n"
-            f"Billable Seconds: {breakdown.billable_seconds}\n"
-            f"Hourly Rate: ${breakdown.hourly_rate_usd:,.4f}\n"
-            f"Single Run Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
-            title="FinOps Calculator",
-        ))
+        console.print(
+            Panel(
+                f"[bold]AWS Glue Run Cost[/bold]\n"
+                f"DPUs: {spec.total_dpu}\n"
+                f"Billable Seconds: {breakdown.billable_seconds}\n"
+                f"Hourly Rate: ${breakdown.hourly_rate_usd:,.4f}\n"
+                f"Single Run Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
+                title="FinOps Calculator",
+            )
+        )
     elif eng in ("emr_serverless", "emr"):
         emr_spec = EmrResourceSpec(executor_count=int(units))
         breakdown = calc.emr.calculate_run_cost(emr_spec, Decimal(str(duration_secs)))
-        console.print(Panel(
-            f"[bold]AWS EMR Serverless Run Cost[/bold]\n"
-            f"vCPU: {emr_spec.total_vcpu}, RAM: {emr_spec.total_memory_gb} GB\n"
-            f"Billable Seconds: {breakdown.billable_seconds}\n"
-            f"Hourly Rate: ${breakdown.hourly_rate_usd:,.4f}\n"
-            f"Single Run Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
-            title="FinOps Calculator",
-        ))
+        console.print(
+            Panel(
+                f"[bold]AWS EMR Serverless Run Cost[/bold]\n"
+                f"vCPU: {emr_spec.total_vcpu}, RAM: {emr_spec.total_memory_gb} GB\n"
+                f"Billable Seconds: {breakdown.billable_seconds}\n"
+                f"Hourly Rate: ${breakdown.hourly_rate_usd:,.4f}\n"
+                f"Single Run Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
+                title="FinOps Calculator",
+            )
+        )
     elif eng == "databricks":
         db_spec = DatabricksResourceSpec(num_workers=int(units))
         breakdown = calc.databricks.calculate_run_cost(db_spec, Decimal(str(duration_secs)))
-        console.print(Panel(
-            f"[bold]Databricks Run Cost[/bold]\n"
-            f"Nodes: {db_spec.total_nodes} ({db_spec.node_type})\n"
-            f"Billable Seconds: {breakdown.billable_seconds}\n"
-            f"Hourly Rate: ${breakdown.hourly_rate_usd:,.4f}\n"
-            f"Single Run Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
-            title="FinOps Calculator",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Databricks Run Cost[/bold]\n"
+                f"Nodes: {db_spec.total_nodes} ({db_spec.node_type})\n"
+                f"Billable Seconds: {breakdown.billable_seconds}\n"
+                f"Hourly Rate: ${breakdown.hourly_rate_usd:,.4f}\n"
+                f"Single Run Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
+                title="FinOps Calculator",
+            )
+        )
     else:
         console.print(f"[bold red]Unsupported compute engine: {engine}[/bold red]")
 

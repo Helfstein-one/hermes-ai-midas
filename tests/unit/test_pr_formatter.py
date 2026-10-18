@@ -15,6 +15,7 @@ from hermes_midas.orchestrator.pr_formatter import MidasTouchFormatter
 # Tier 1: Feature Unit Tests
 # ============================================================================
 
+
 @pytest.mark.tier1
 def test_midas_touch_formatter_contains_required_sections():
     """Tier 1: Verify PR markdown contains all required headings, ROI, diff, and checklist."""
@@ -76,6 +77,7 @@ def test_midas_touch_metadata_extraction():
 # ============================================================================
 # Tier 2: Boundary & Corner Cases
 # ============================================================================
+
 
 @pytest.mark.tier2
 def test_formatter_handles_empty_diff_and_no_patterns():

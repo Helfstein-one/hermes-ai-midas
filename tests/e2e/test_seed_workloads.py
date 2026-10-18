@@ -20,6 +20,7 @@ from hermes_midas.finops import WorkloadEvaluator
 # Tier 4: Seed Workloads E2E Verification
 # ============================================================================
 
+
 @pytest.mark.tier4
 def test_e2e_glue_customer360_workload():
     """Tier 4 E2E: Full inspection and ROI calculation on Glue Customer360 seed workload."""

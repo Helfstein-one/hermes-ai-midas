@@ -37,11 +37,21 @@ DATABRICKS_DBU_RATES: dict[str, Decimal] = {
 DATABRICKS_INSTANCE_MAP: dict[str, dict[str, Decimal]] = {
     "m5.xlarge": {"dbu": Decimal("0.75"), "ec2_hourly": Decimal("0.192"), "vcpu": Decimal(4), "ram_gb": Decimal(16)},
     "m5.2xlarge": {"dbu": Decimal("1.50"), "ec2_hourly": Decimal("0.384"), "vcpu": Decimal(8), "ram_gb": Decimal(32)},
-    "i3.xlarge": {"dbu": Decimal("1.00"), "ec2_hourly": Decimal("0.312"), "vcpu": Decimal(4), "ram_gb": Decimal("30.5")},
+    "i3.xlarge": {
+        "dbu": Decimal("1.00"),
+        "ec2_hourly": Decimal("0.312"),
+        "vcpu": Decimal(4),
+        "ram_gb": Decimal("30.5"),
+    },
     "i3.2xlarge": {"dbu": Decimal("2.00"), "ec2_hourly": Decimal("0.624"), "vcpu": Decimal(8), "ram_gb": Decimal(61)},
     "c5.2xlarge": {"dbu": Decimal("1.50"), "ec2_hourly": Decimal("0.340"), "vcpu": Decimal(8), "ram_gb": Decimal(16)},
     "r5.4xlarge": {"dbu": Decimal("1.50"), "ec2_hourly": Decimal("1.008"), "vcpu": Decimal(16), "ram_gb": Decimal(128)},
-    "i3en.3xlarge": {"dbu": Decimal("2.50"), "ec2_hourly": Decimal("1.356"), "vcpu": Decimal(12), "ram_gb": Decimal(96)},
+    "i3en.3xlarge": {
+        "dbu": Decimal("2.50"),
+        "ec2_hourly": Decimal("1.356"),
+        "vcpu": Decimal(12),
+        "ram_gb": Decimal(96),
+    },
 }
 
 SECONDS_PER_HOUR = Decimal(3600)
