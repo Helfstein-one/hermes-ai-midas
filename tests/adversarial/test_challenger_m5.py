@@ -131,7 +131,7 @@ df_enriched.write.mode("overwrite").parquet("s3://lake/curated/")
     def test_ast_patch_compiles_on_all_seed_workloads(self):
         """Verify that every seed workload transforms into 100% valid, compilable Python bytecode."""
         analyzer = ASTAnalyzer()
-        workloads_dir = Path("/Users/mauriciohelfstein/dev/hermes-ai-midas/workloads")
+        workloads_dir = Path(__file__).resolve().parent.parent.parent / "workloads"
         seed_files = [
             workloads_dir / "glue" / "customer360_elt.py",
             workloads_dir / "emr" / "clickstream_attribution.py",
