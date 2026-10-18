@@ -18,6 +18,8 @@ class ComputePlatform(StrEnum):
     GLUE = "glue"
     EMR_SERVERLESS = "emr_serverless"
     DATABRICKS = "databricks"
+    SNOWFLAKE = "snowflake"
+    BIGQUERY = "bigquery"
 
 
 @dataclass
@@ -70,6 +72,28 @@ class DatabricksResourceSpec:
     def total_nodes(self) -> int:
         """Total nodes including 1 driver + worker nodes."""
         return 1 + self.num_workers
+
+
+@dataclass
+class SnowflakeResourceSpec:
+    """Resource configuration for Snowflake Virtual Warehouses."""
+
+    warehouse_size: str = "large"
+    credit_rate_usd: Decimal = Decimal("3.00")
+
+    @property
+    def credits_per_hour(self) -> Decimal:
+        from hermes_midas.finops.rates import SNOWFLAKE_WAREHOUSE_CREDITS
+
+        return SNOWFLAKE_WAREHOUSE_CREDITS.get(self.warehouse_size.lower(), Decimal("8.0"))
+
+
+@dataclass
+class BigQueryResourceSpec:
+    """Resource configuration for Google BigQuery On-Demand queries."""
+
+    scanned_bytes: Decimal = Decimal("1099511627776")  # 1 TB
+    rate_per_tb: Decimal = Decimal("6.25")
 
 
 @dataclass

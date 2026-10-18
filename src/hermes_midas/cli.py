@@ -113,18 +113,25 @@ def audit(
 
 @app.command("analyze")
 def analyze(
-    script: str = typer.Option(..., "--script", "-s", help="Path to PySpark script."),
+    script: str = typer.Option(..., "--script", "-s", help="Path to PySpark (.py) or SQL (.sql) script."),
     output_format: str = typer.Option("terminal", "--format", "-f", help="Output format: terminal | json | markdown."),
 ):
-    """Statically analyze a single PySpark file for compute waste and anti-patterns."""
+    """Statically analyze a single PySpark or SQL file for compute waste and anti-patterns."""
     script_p = Path(script)
     if not script_p.exists():
         console.print(f"[bold red]File not found: {script}[/bold red]")
         raise typer.Exit(code=1)
 
     source = script_p.read_text(encoding="utf-8")
-    analyzer = ASTAnalyzer()
-    res = analyzer.inspect(source, str(script_p))
+    is_sql = script_p.suffix.lower() == ".sql"
+    if is_sql:
+        from hermes_midas.sql_analyzer import SQLAnalyzer
+
+        analyzer = SQLAnalyzer()
+        res = analyzer.inspect(source, str(script_p))
+    else:
+        analyzer = ASTAnalyzer()
+        res = analyzer.inspect(source, str(script_p))
 
     if output_format.lower() == "json":
         console.print(json.dumps(res.to_dict(), indent=2), soft_wrap=True)
@@ -134,22 +141,30 @@ def analyze(
         console.print(f"# AST Analysis: `{script}`\n")
         console.print(f"- **Anti-patterns detected**: {res.anti_patterns_count}")
         for ap in res.anti_patterns:
-            console.print(
-                f"- **{ap.pattern_name}** ({ap.pattern_id}) at lines {ap.line_start}-{ap.line_end}: {ap.description}"
+            line_str = (
+                f"line {ap.line_number}"
+                if getattr(ap, "line_number", None)
+                else f"lines {getattr(ap, 'line_start', '?')}-{getattr(ap, 'line_end', '?')}"
             )
+            console.print(f"- **{ap.pattern_id}** at {line_str}: {ap.description}")
         return
 
     # Terminal output
     table = Table(title=f"Static AST Analysis: {script_p.name}")
     table.add_column("Pattern ID", style="cyan")
-    table.add_column("Lines", style="yellow")
+    table.add_column("Location", style="yellow")
     table.add_column("Severity", style="bold red")
     table.add_column("Description", style="white")
 
     for ap in res.anti_patterns:
+        loc = (
+            str(ap.line_number)
+            if getattr(ap, "line_number", None)
+            else f"{getattr(ap, 'line_start', '?')}-{getattr(ap, 'line_end', '?')}"
+        )
         table.add_row(
             ap.pattern_id,
-            f"{ap.line_start}-{ap.line_end}",
+            loc,
             ap.severity,
             ap.description,
         )
@@ -159,9 +174,11 @@ def analyze(
 
 @app.command("calculate")
 def calculate(
-    engine: str = typer.Option("glue", "--engine", "-e", help="Compute engine (glue | emr_serverless | databricks)."),
+    engine: str = typer.Option(
+        "glue", "--engine", "-e", help="Compute engine (glue | emr_serverless | databricks | snowflake | bigquery)."
+    ),
     duration_secs: float = typer.Option(3600.0, "--duration-secs", help="Job duration in seconds."),
-    units: float = typer.Option(10.0, "--units", help="Workers / DPUs / Nodes allocated."),
+    units: float = typer.Option(10.0, "--units", help="Workers / DPUs / Nodes / Credits / TB scanned."),
 ):
     """Run deterministic FinOps pricing calculator for workload parameters."""
     from decimal import Decimal
@@ -204,6 +221,47 @@ def calculate(
                 f"Billable Seconds: {breakdown.billable_seconds}\n"
                 f"Hourly Rate: ${breakdown.hourly_rate_usd:,.4f}\n"
                 f"Single Run Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
+                title="FinOps Calculator",
+            )
+        )
+    elif eng == "snowflake":
+        from hermes_midas.finops import SnowflakeResourceSpec
+
+        size_map = {
+            1: "X-Small",
+            2: "Small",
+            4: "Medium",
+            8: "Large",
+            16: "X-Large",
+            32: "2X-Large",
+            64: "3X-Large",
+            128: "4X-Large",
+        }
+        wh_size = size_map.get(int(units), "Large")
+        sf_spec = SnowflakeResourceSpec(warehouse_size=wh_size)
+        breakdown = calc.snowflake.calculate_run_cost(sf_spec, Decimal(str(duration_secs)))
+        console.print(
+            Panel(
+                f"[bold]Snowflake Virtual Warehouse Run Cost[/bold]\n"
+                f"Warehouse Size: {sf_spec.warehouse_size} ({sf_spec.credits_per_hour} Credits/hr)\n"
+                f"Billable Seconds: {breakdown.billable_seconds}\n"
+                f"Credit Rate: ${sf_spec.credit_rate_usd:,.2f}/credit\n"
+                f"Single Run Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
+                title="FinOps Calculator",
+            )
+        )
+    elif eng in ("bigquery", "bq"):
+        from hermes_midas.finops import BigQueryResourceSpec
+
+        bq_spec = BigQueryResourceSpec()
+        tb_scanned = Decimal(str(units))
+        breakdown = calc.bigquery.calculate_query_cost(bq_spec, tb_scanned=tb_scanned)
+        console.print(
+            Panel(
+                f"[bold]Google BigQuery Run Cost[/bold]\n"
+                f"Pricing Model: On-Demand ($6.25/TB scanned)\n"
+                f"Data Scanned: {tb_scanned} TB\n"
+                f"Single Query Cost: [bold green]${breakdown.cost_usd:,.4f}[/bold green]",
                 title="FinOps Calculator",
             )
         )

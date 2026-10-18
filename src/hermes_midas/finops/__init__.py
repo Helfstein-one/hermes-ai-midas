@@ -1,18 +1,22 @@
 """Deterministic FinOps pricing calculator and ROI engine."""
 
 from hermes_midas.finops.calculator import (
+    BigQueryPricingCalculator,
     DatabricksCalculator,
     EmrServerlessCalculator,
     FinOpsCalculator,
     GluePricingCalculator,
+    SnowflakePricingCalculator,
 )
 from hermes_midas.finops.models import (
+    BigQueryResourceSpec,
     ComputePlatform,
     DatabricksResourceSpec,
     EmrResourceSpec,
     FinOpsImpact,
     GlueResourceSpec,
     RunCostBreakdown,
+    SnowflakeResourceSpec,
 )
 from hermes_midas.finops.rates import (
     DATABRICKS_DBU_RATES,
@@ -48,6 +52,8 @@ __all__ = [
     "MONTHS_PER_YEAR",
     "SECONDS_PER_HOUR",
     "ComputePlatform",
+    "BigQueryPricingCalculator",
+    "BigQueryResourceSpec",
     "DatabricksCalculator",
     "DatabricksResourceSpec",
     "EmrResourceSpec",
@@ -57,5 +63,7 @@ __all__ = [
     "GluePricingCalculator",
     "GlueResourceSpec",
     "RunCostBreakdown",
+    "SnowflakePricingCalculator",
+    "SnowflakeResourceSpec",
     "WorkloadEvaluator",
 ]

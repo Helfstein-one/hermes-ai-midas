@@ -1,0 +1,69 @@
+{
+  "workload_id": "dbt_snowflake_customer_orders",
+  "job_name": "fct_customer_orders",
+  "engine": "snowflake",
+  "dbt_version": "1.8.0",
+  "script_path": "workloads/dbt_snowflake/models/marts/fct_customer_orders.sql",
+  "schedule": "DAILY",
+  "runs_per_day": 1,
+  "runs_per_month": 30,
+  "compute_spec": {
+    "warehouse_size": "2X-Large",
+    "credits_per_hour": 32.0,
+    "credit_rate_usd": 3.00,
+    "hourly_rate_usd": 96.00
+  },
+  "baseline_metrics": {
+    "warehouse_size": "2X-Large",
+    "duration_seconds": 6390,
+    "duration_minutes": 106.5,
+    "credits_consumed_per_run": 56.8,
+    "cost_per_run_usd": 170.40,
+    "monthly_spend_usd": 5112.00
+  },
+  "optimized_metrics": {
+    "target_warehouse_size": "Medium",
+    "target_credits_per_hour": 4.0,
+    "duration_seconds": 360,
+    "duration_minutes": 6.0,
+    "credits_consumed_per_run": 0.4,
+    "cost_per_run_usd": 1.20,
+    "monthly_spend_usd": 36.00,
+    "monthly_savings_usd": 5076.00,
+    "annual_savings_usd": 60912.00,
+    "waste_reduction_pct": 99.30
+  },
+  "anti_patterns": [
+    {
+      "pattern_id": "SELECT_STAR",
+      "category": "COLUMNAR_SCAN_WASTE",
+      "description": "Full column scan via SELECT * on columnar Snowflake micro-partitions loads unneeded columns into warehouse memory",
+      "recommended_replacement": "Explicit projection of required model attributes (order_id, customer_id, order_total)",
+      "estimated_overhead_pct": 45.0
+    },
+    {
+      "pattern_id": "CARTESIAN_PRODUCT",
+      "category": "CROSS_JOIN_EXPLOSION",
+      "description": "Unconstrained comma join raw_orders, raw_customers causes quadratic row multiplication across virtual warehouse nodes",
+      "recommended_replacement": "Explicit INNER JOIN on raw_orders.customer_id = raw_customers.customer_id",
+      "estimated_overhead_pct": 40.0
+    },
+    {
+      "pattern_id": "UNFILTERED_PARTITION_SCAN",
+      "category": "FULL_CLUSTER_SCAN",
+      "description": "Full scan over transactional orders table without timestamp or partition pruning filter",
+      "recommended_replacement": "Bounded partition filter or dbt is_incremental() date range clause",
+      "estimated_overhead_pct": 14.3
+    }
+  ],
+  "telemetry": {
+    "bytes_scanned_mb": 450000.0,
+    "rows_produced": 125000000,
+    "warehouse_spill_to_local_storage_bytes": 14200000000,
+    "warehouse_spill_to_remote_storage_bytes": 4800000000,
+    "partitions_total": 52000,
+    "partitions_scanned": 52000,
+    "compilation_time_seconds": 12.4,
+    "execution_time_seconds": 6377.6
+  }
+}

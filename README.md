@@ -59,7 +59,7 @@ uv sync
 O projeto conta com **153 testes automatizados** (unitários, integrados, adversariais e E2E) que rodam sem necessidade de internet, chaves de API pagas ou infraestrutura de nuvem:
 
 ```bash
-# Executar a suíte completa de 153 testes via Makefile
+# Executar a suíte completa de 167 testes via Makefile
 make test
 
 # Ou diretamente com uv e pytest em modo detalhado
@@ -173,7 +173,7 @@ Abaixo está a demonstração real do fluxo de auditoria e otimização do `herm
 
 ### 📊 Benchmark de Redução de Custos e Performance
 
-Os testes automatizados e execuções empíricas com os 5 workloads em `workloads/` comprovam uma redução massiva de custos e tempo de computação:
+Os testes automatizados e execuções empíricas com os 6 workloads em `workloads/` comprovam uma redução massiva de custos e tempo de computação:
 
 | Workload & Engine | Tempo de Execução Original | Tempo Otimizado (AST) | Redução de Tempo | Custo Mensal Antes | Custo Mensal Depois | Economia Líquida Mensal |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -182,7 +182,8 @@ Os testes automatizados e execuções empíricas com os 5 workloads em `workload
 | **EMR EC2 Graviton** (`graviton_spot`) | 48 min (x86 On-Demand) | 22 min (Graviton Spot) | **-54.2%** | $391.68 | $21.12 | **$370.56 / mês** (-94.6%) |
 | **Databricks Delta** (`ledger_sync`) | 90 min (All-Purpose) | 28 min (Job Cluster) | **-68.9%** | $5,829.60 | $349.77 | **$5,479.83 / mês** (-94.0%) |
 | **Delta Lake S3** (`compaction`) | 60 min (500 micro-arquivos) | 14 min (coalesce 16) | **-76.7%** | $882.00 | $88.20 | **$793.80 / mês** (-90.0%) |
-| **🏆 TOTAL CONSOLIDADO** | **328 min** | **92 min (-72.0%)** | **-72.0%** | **$19,300.21** | **$1,105.98** | **$18,194.23 / mês (-94.3%)** |
+| **Snowflake + dbt** (`customer_orders`) | 106.5 min (2X-Large WH) | 6.0 min (Medium WH + Pruning) | **-94.4%** | $5,112.00 | $36.00 | **$5,076.00 / mês** (-99.3%) |
+| **🏆 TOTAL CONSOLIDADO** | **434.5 min** | **98 min (-77.4%)** | **-77.4%** | **$24,412.21** | **$1,141.98** | **$23,270.23 / mês (-95.3%)** |
 
 ---
 
@@ -214,6 +215,8 @@ flowchart TD
         W2["Amazon EMR Serverless"]
         W3["EMR on EC2 (Graviton m6g + Spot)"]
         W4["Databricks on AWS & S3 Delta Lake"]
+        W5["Snowflake Virtual Warehouses & dbt-core"]
+        W6["Google BigQuery On-Demand"]
     end
 
     subgraph Output["🏆 5. Entrega & Governança"]
@@ -326,6 +329,42 @@ df = df.withColumn("sku_clean", F.coalesce(F.upper(F.trim(F.col("raw_sku"))), F.
 
 ---
 
+### 🏛️ Motor de Análise Estática SQL & dbt-core (SQLGlot)
+
+O `hermes-ai-midas` integra **SQLGlot** para inspeção estática semântica de queries SQL e modelos dbt-core em dialetos **Snowflake** e **Google BigQuery**, corrigindo anti-patterns de varredura e junção:
+
+#### 1. Projeção Completa Indiscriminada (`SELECT_STAR`)
+Em bancos colunares (Snowflake micro-partitions, BigQuery capacitor storage), `SELECT *` obriga o carregamento de todas as colunas em memória de warehouse e cobra por todos os bytes scaneados.
+```sql
+-- ❌ ANTES (Carrega todas as colunas em memória e satura o cache de warehouse)
+SELECT * FROM raw_vault.orders;
+
+-- ✅ DEPOIS (Projeção explícita injetada via AST SQLGlot)
+SELECT order_id, customer_id, order_date, total_amount FROM raw_vault.orders;
+```
+
+#### 2. Produto Cartesiano & Comma-Join sem Predicado (`CARTESIAN_PRODUCT`)
+Junções com vírgula (`FROM a, b`) sem cláusula `ON` ou `USING` produzem explosão quadrática de linhas e spills massivos em disco local e remoto.
+```sql
+-- ❌ ANTES (Explosão quadrática N x M de linhas)
+SELECT a.id, b.name FROM raw_orders a, raw_customers b;
+
+-- ✅ DEPOIS (Reescrita determinística para INNER JOIN com chave de negócio)
+SELECT a.id, b.name FROM raw_orders a INNER JOIN raw_customers b ON a.customer_id = b.customer_id;
+```
+
+#### 3. Varredura Total sem Poda de Partição (`UNFILTERED_PARTITION_SCAN`)
+Queries em tabelas transacionais históricas sem filtro de data forçam full scans em dezenas de milhares de micro-partições.
+```sql
+-- ❌ ANTES (Full table scan em 52.000 partições históricas)
+SELECT id, amount FROM analytics.fact_orders;
+
+-- ✅ DEPOIS (Injeção de predicado de poda temporal via AST)
+SELECT id, amount FROM analytics.fact_orders WHERE order_date >= DATEADD('day', -30, CURRENT_DATE());
+```
+
+---
+
 ## 🤖 8. Por Que Optar por Hermes AI? (Trade-offs & Vantagens)
 
 <div align="center">
@@ -380,12 +419,14 @@ O módulo `hermes_midas.finops` executa cálculos 100% matemáticos em Python ba
 | **EMR on EC2** | $(\text{Master} + \text{Core}_{\text{OnDemand}} + \text{Task}_{\text{Spot}}) \times \frac{\text{seg}}{3600}$ | Graviton m6g vs x86 m5 Spot (~70% desc.) |
 | **Databricks** | $\text{DBUs} \times \text{Taxa DBU} + \text{EC2 Host Cost}$ | All-Purpose (\$0.55/DBU) ➔ Job Cluster (\$0.20/DBU) |
 | **Delta Lake** | Custo de I/O em PUT/GET requests no S3 + tempo de scan | Redução de micro-arquivos de 50KB com `.coalesce()` |
+| **Snowflake** | $\text{Credits/hr} \times \frac{\max(60, \text{seg})}{3600} \times \$3.00$ | Standard Edition \$3.00/credit (XS: 1 a 4XL: 128) |
+| **BigQuery** | $\text{TB Escaneados} \times \$6.25$ | On-Demand Analysis (\$6.25 por TB varrido) |
 
 ---
 
 ## 🧪 10. Matriz de Workloads e Testes Multi-Tecnologia
 
-O projeto possui **153 testes automatizados** passando em **< 1 segundo** de forma 100% offline, cobrindo 5 workloads de diferentes tecnologias em `workloads/`:
+O projeto possui **167 testes automatizados** passando em **< 1.3 segundos** de forma 100% offline, cobrindo 6 workloads de diferentes tecnologias em `workloads/`:
 
 | Workload ID | Tecnologia / Engine | Anti-Patterns Identificados pelo AST Inspector | Economia Mensal Comprovada |
 | :--- | :--- | :--- | :--- |
@@ -394,10 +435,11 @@ O projeto possui **153 testes automatizados** passando em **< 1 segundo** de for
 | `databricks_financial_ledger_sync` | **Databricks on AWS** | All-Purpose Cluster ocioso, `.repartition(200)` inadequado, UDF custom | **$5,829.60 / mês** (64.3%) |
 | `emr_ec2_graviton_spot` | **EMR EC2 (x86 ➔ Graviton)** | Instâncias x86 m5.2xlarge On-Demand, join sem broadcast, orphan action | **$370.56 / mês** (94.6%) |
 | `delta_compaction_optimizer` | **Spark Delta Lake / S3** | `.repartition(500)` micro-arquivos, falta de partição em IoT events | **$793.80 / mês** (90.0%) |
+| `dbt_snowflake_customer_orders` | **Snowflake + dbt-core** | `SELECT *`, Cartesian comma-join, scan de partição sem filtro | **$5,076.00 / mês** (99.3%) |
 
 ### Execução dos Testes
 ```bash
-# Executa os 153 testes unitários, adversariais e E2E em modo offline
+# Executa os 167 testes unitários, adversariais e E2E em modo offline
 make test
 
 # Ou com pytest diretamente
@@ -614,17 +656,20 @@ uv run hermes-midas --help
 
 ### Comandos da CLI
 
-#### 1. Inspecionar Script PySpark via AST
-Analisa o código estático contra ações órfãs, joins sem broadcast e UDFs ineficientes:
+#### 1. Inspecionar Script PySpark ou SQL/dbt via AST
+Analisa o código estático contra ações órfãs, joins sem broadcast, UDFs ineficientes, `SELECT *` e produtos cartesianos:
 ```bash
-# Saída visual no terminal
+# Inspecionar pipeline PySpark
 uv run hermes-midas analyze --script workloads/glue/customer360_elt.py
 
+# Inspecionar modelo SQL / dbt-core
+uv run hermes-midas analyze --script workloads/dbt_snowflake/models/marts/fct_customer_orders.sql
+
 # Saída estruturada em JSON (para integrações CI/CD)
-uv run hermes-midas analyze --script workloads/glue/customer360_elt.py --format json
+uv run hermes-midas analyze --script workloads/dbt_snowflake/models/marts/fct_customer_orders.sql --format json
 
 # Saída em Markdown (para PR comments)
-uv run hermes-midas analyze --script workloads/glue/customer360_elt.py --format markdown
+uv run hermes-midas analyze --script workloads/dbt_snowflake/models/marts/fct_customer_orders.sql --format markdown
 ```
 
 #### 2. Calcular Custos e ROI FinOps
@@ -638,6 +683,12 @@ uv run hermes-midas calculate --engine emr_serverless --units 16 --duration-secs
 
 # Calcular custo no Databricks (8 nós de Job Cluster por 2 horas)
 uv run hermes-midas calculate --engine databricks --units 8 --duration-secs 7200
+
+# Calcular custo no Snowflake (Warehouse 2X-Large por ~1h46m / 6390s)
+uv run hermes-midas calculate --engine snowflake --units 32 --duration-secs 6390
+
+# Calcular custo no Google BigQuery On-Demand (10 TB de dados varridos)
+uv run hermes-midas calculate --engine bigquery --units 10
 ```
 
 #### 3. Auditoria Proativa de Repositório (`audit`)

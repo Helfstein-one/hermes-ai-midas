@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **SQL & dbt-core Static AST Analysis (SQLGlot)**:
+  - Added `src/hermes_midas/sql_analyzer/` using `sqlglot>=25.0.0` for semantic SQL AST inspection, deterministic patch generation, and diff computation.
+  - Detects and refactors `SELECT_STAR` (columnar memory waste), `CARTESIAN_PRODUCT` (unconstrained comma-joins), and `UNFILTERED_PARTITION_SCAN` (missing partition pruning).
+  - Built-in dbt Jinja pre-processing (`sanitize_dbt_jinja`) allowing native parsing and refactoring of dbt models with `{{ config(...) }}`, `{{ ref(...) }}`, and `{% ... %}` tags.
+- **Modern Data Warehouse FinOps Pricing Engines**:
+  - `SnowflakePricingCalculator`: Deterministic credit consumption model across Virtual Warehouse tiers (XS: 1 credit/hr to 4XL: 128 credits/hr) at $3.00/credit standard rate with official 60-second billing floor.
+  - `BigQueryPricingCalculator`: Deterministic scanned byte pricing model for Google BigQuery On-Demand analytics ($6.25/TB scanned).
+- **Polymorphic Pipeline & Multi-Tier Model Router Dispatch**:
+  - Updated `async_optimize_workload`, `ScheduledCronAuditor`, and `DeterministicModelRouter` Tier 3 offline fallback to automatically detect `.sql` workloads and dispatch to `SQLAnalyzer`.
+- **Seed Workload 6: dbt Snowflake Mart**:
+  - Created `workloads/dbt_snowflake/models/marts/fct_customer_orders.sql` and `workloads/dbt_snowflake/manifest.json` delivering exact **$5,076.00/month** ($60,912.00/year) savings via warehouse right-sizing (2X-Large 6390s -> Medium 360s) and partition pruning (-99.3% compute waste).
+- **Test Suite Expansion to 167 Tests**:
+  - Added unit test suite `tests/unit/test_sql_analyzer.py`, expanded `tests/unit/test_finops_calculator.py` and `tests/e2e/test_seed_workloads.py`, bringing total offline test count to 167 (100% passing).
 - **Local Emulation Architecture & Screenshot**: Added high-resolution rendered screenshot [`docs/architecture/assets/hermes_midas_local.png`](docs/architecture/assets/hermes_midas_local.png) and enhanced [`docs/architecture/hermes_midas_local.drawio`](docs/architecture/hermes_midas_local.drawio) with full container topology details, bridge network, FastMCP stdio channels, and dedicated Section 3.3 in README.
 - **Quickstart & Test Guide**: Added dedicated Section 2 in `README.md` detailing step-by-step installation with `uv`, offline test runner instructions (153 tests), CLI commands for AST analysis and FinOps calculation, and Docker emulation topology lifecycle.
 - **Official Nous Research Hermes Agent Branding**: Added official Hermes Agent mascot asset [`docs/architecture/assets/hermes_agent_avatar.jpg`](docs/architecture/assets/hermes_agent_avatar.jpg), centered Hero Banner in `README.md` with direct link to [hermes-agent.nousresearch.com](https://hermes-agent.nousresearch.com/), and circular golden-bordered Hermes AI avatar badges embedded directly into Bedrock/SageMaker inference nodes in both single-VPC and multi-account `.drawio` architectures and PNG renders.

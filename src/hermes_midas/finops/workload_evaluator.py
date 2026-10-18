@@ -5,15 +5,18 @@ from __future__ import annotations
 from decimal import Decimal
 
 from hermes_midas.finops.calculator import (
+    BigQueryPricingCalculator,
     DatabricksCalculator,
     EmrServerlessCalculator,
     GluePricingCalculator,
+    SnowflakePricingCalculator,
 )
 from hermes_midas.finops.models import (
     DatabricksResourceSpec,
     EmrResourceSpec,
     FinOpsImpact,
     GlueResourceSpec,
+    SnowflakeResourceSpec,
 )
 
 
@@ -24,6 +27,8 @@ class WorkloadEvaluator:
         self.glue_calc = GluePricingCalculator()
         self.emr_calc = EmrServerlessCalculator()
         self.db_calc = DatabricksCalculator()
+        self.snowflake_calc = SnowflakePricingCalculator()
+        self.bigquery_calc = BigQueryPricingCalculator()
 
     def evaluate_glue_orders_aggregation(self) -> FinOpsImpact:
         """
@@ -195,9 +200,29 @@ class WorkloadEvaluator:
             runs_per_month=Decimal(720),
         )
 
+    def evaluate_dbt_snowflake_customer_orders(self) -> FinOpsImpact:
+        """
+        Seed Workload 6: dbt-core + Snowflake mart fct_customer_orders.
+        Baseline: 2X-Large warehouse (32 credits/hr), unpartitioned full table scan + cartesian join (6390s).
+        Optimized: Medium warehouse (4 credits/hr), partition pruning + incremental logic (360s).
+        Daily run (1 run/day, 30 runs/month) yielding exact $5,076.00/month savings.
+        """
+        baseline_spec = SnowflakeResourceSpec(warehouse_size="2X-Large")
+        optimized_spec = SnowflakeResourceSpec(warehouse_size="Medium")
+        return self.snowflake_calc.calculate_roi(
+            baseline_spec=baseline_spec,
+            baseline_duration_seconds=Decimal(6390),
+            optimized_spec=optimized_spec,
+            optimized_duration_seconds=Decimal(360),
+            runs_per_day=Decimal(1),
+            runs_per_month=Decimal(30),
+        )
+
     def evaluate_workload(self, name_or_id: str) -> FinOpsImpact:
         """Evaluate a workload by identifier or name string."""
         key = name_or_id.lower().replace("-", "_")
+        if "snowflake" in key or "dbt" in key or "customer_orders" in key:
+            return self.evaluate_dbt_snowflake_customer_orders()
         if "graviton" in key or "emr_ec2" in key:
             return self.evaluate_emr_ec2_graviton_spot()
         if "delta" in key or "compaction" in key:

@@ -180,3 +180,39 @@ def test_e2e_delta_lake_compaction_optimizer_workload():
     expected_monthly = Decimal(str(manifest["optimized_metrics"]["monthly_savings_usd"]))
     assert roi.monthly_savings_usd == expected_monthly
     assert roi.monthly_savings_usd == Decimal("793.80")
+
+
+@pytest.mark.tier4
+def test_e2e_dbt_snowflake_customer_orders_workload():
+    """Tier 4 E2E: Full inspection and ROI calculation on dbt Snowflake seed workload."""
+    from hermes_midas.sql_analyzer import SQLAnalyzer
+
+    script_path = Path("workloads/dbt_snowflake/models/marts/fct_customer_orders.sql")
+    manifest_path = Path("workloads/dbt_snowflake/manifest.json")
+
+    assert script_path.exists(), "dbt Snowflake fct_customer_orders.sql must exist"
+    assert manifest_path.exists(), "dbt Snowflake manifest.json must exist"
+
+    source_code = script_path.read_text(encoding="utf-8")
+    with open(manifest_path, encoding="utf-8") as f:
+        manifest = json.load(f)
+
+    # 1. SQL AST Analyzer
+    analyzer = SQLAnalyzer()
+    inspection = analyzer.inspect(source_code, str(script_path), dialect="snowflake")
+    assert inspection.is_valid is True
+    assert inspection.anti_patterns_count >= 3
+
+    detected_pattern_ids = {ap.pattern_id for ap in inspection.anti_patterns}
+    assert "SELECT_STAR" in detected_pattern_ids
+    assert "CARTESIAN_PRODUCT" in detected_pattern_ids
+    assert "UNFILTERED_PARTITION_SCAN" in detected_pattern_ids
+
+    # 2. FinOps ROI
+    evaluator = WorkloadEvaluator()
+    roi = evaluator.evaluate_dbt_snowflake_customer_orders()
+    expected_monthly = Decimal(str(manifest["optimized_metrics"]["monthly_savings_usd"]))
+    assert roi.monthly_savings_usd == expected_monthly
+    assert roi.monthly_savings_usd == Decimal("5076.00")
+    assert roi.waste_reduction_pct == Decimal("99.30")
+    assert roi.annual_savings_usd == Decimal("60912.00")

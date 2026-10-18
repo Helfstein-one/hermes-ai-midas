@@ -176,3 +176,51 @@ def test_unknown_databricks_instance_type_uses_safe_fallback():
     breakdown = calc.calculate_run_cost(spec, duration_seconds=3600)
     assert breakdown.cost_usd > Decimal("0.00")
     assert breakdown.engine == "databricks"
+
+
+@pytest.mark.tier1
+def test_snowflake_pricing_calculator():
+    """Tier 1: Verify Snowflake Virtual Warehouse pricing ($3.00/credit, 60s floor)."""
+    from hermes_midas.finops import SnowflakePricingCalculator, SnowflakeResourceSpec
+
+    calc = SnowflakePricingCalculator()
+    # 2X-Large warehouse = 32 credits/hr. Rate $3.00/credit -> $96.00/hr.
+    # 3600s (1 hr) run: 32 credits * $3.00 = $96.00
+    spec = SnowflakeResourceSpec(warehouse_size="2X-Large")
+    breakdown = calc.calculate_run_cost(spec, duration_seconds=3600)
+    assert breakdown.cost_usd == Decimal("96.00")
+    assert breakdown.hourly_rate_usd == Decimal("96.00")
+    assert breakdown.details["credit_rate_usd"] == "3.00"
+    assert breakdown.engine == "snowflake"
+
+    # Test 60s minimum billing floor
+    short_breakdown = calc.calculate_run_cost(spec, duration_seconds=15)
+    assert short_breakdown.billable_seconds == Decimal(60)
+
+
+@pytest.mark.tier1
+def test_bigquery_pricing_calculator():
+    """Tier 1: Verify Google BigQuery on-demand pricing ($6.25/TB scanned)."""
+    from hermes_midas.finops import BigQueryPricingCalculator, BigQueryResourceSpec
+
+    calc = BigQueryPricingCalculator()
+    spec = BigQueryResourceSpec()
+    # 2.5 TB scanned = 2.5 * $6.25 = $15.625
+    breakdown = calc.calculate_query_cost(spec, tb_scanned=Decimal("2.5"))
+    assert breakdown.cost_usd == Decimal("15.6250")
+    assert breakdown.engine == "bigquery"
+
+
+@pytest.mark.tier1
+def test_workload_evaluator_dbt_snowflake_customer_orders():
+    """Tier 1: Verify dbt Snowflake customer orders exact $5,076.00 monthly savings."""
+    evaluator = WorkloadEvaluator()
+    impact = evaluator.evaluate_dbt_snowflake_customer_orders()
+
+    assert impact.engine == "snowflake"
+    assert impact.baseline_cost_usd == Decimal("170.4000")
+    assert impact.optimized_cost_usd == Decimal("1.2000")
+    assert impact.cost_savings_per_run_usd == Decimal("169.2000")
+    assert impact.monthly_savings_usd == Decimal("5076.00")
+    assert impact.annual_savings_usd == Decimal("60912.00")
+    assert impact.waste_reduction_pct == Decimal("99.30")

@@ -54,6 +54,24 @@ DATABRICKS_INSTANCE_MAP: dict[str, dict[str, Decimal]] = {
     },
 }
 
+# Snowflake Virtual Warehouse Credits Table (Standard Edition $3.00/credit)
+SNOWFLAKE_CREDIT_RATE = Decimal("3.00")
+SNOWFLAKE_WAREHOUSE_CREDITS: dict[str, Decimal] = {
+    "x-small": Decimal("1.0"),
+    "small": Decimal("2.0"),
+    "medium": Decimal("4.0"),
+    "large": Decimal("8.0"),
+    "x-large": Decimal("16.0"),
+    "2x-large": Decimal("32.0"),
+    "3x-large": Decimal("64.0"),
+    "4x-large": Decimal("128.0"),
+}
+SNOWFLAKE_MINIMUM_BILLABLE_SECONDS = Decimal(60)
+
+# Google BigQuery On-Demand Analysis ($6.25 per TB scanned)
+BIGQUERY_ON_DEMAND_PER_TB = Decimal("6.25")
+BYTES_PER_TB = Decimal(1024) ** 4
+
 SECONDS_PER_HOUR = Decimal(3600)
 DAYS_PER_MONTH = Decimal("30.5")
 MONTHS_PER_YEAR = Decimal(12)

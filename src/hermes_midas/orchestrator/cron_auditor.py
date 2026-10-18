@@ -52,9 +52,21 @@ class ScheduledCronAuditor:
         self._open_prs: dict[str, str] = {}  # file_path -> fingerprint
 
     def scan_repository(self, repo_dir: Path | str) -> AuditRunReport:
-        """Scan repository directory for PySpark compute waste and anti-patterns."""
+        """Scan repository directory for PySpark and SQL/dbt compute waste and anti-patterns."""
+        from hermes_midas.sql_analyzer import SQLAnalyzer
+
         repo_path = Path(repo_dir)
-        py_files = list(repo_path.rglob("*.py"))
+        files = [
+            p
+            for p in repo_path.rglob("*")
+            if p.suffix in (".py", ".sql")
+            and not p.name.startswith("test_")
+            and "__pycache__" not in str(p)
+            and ".venv" not in str(p)
+            and ".git" not in str(p)
+            and ".midas" not in str(p)
+        ]
+        sql_analyzer = SQLAnalyzer()
         scanned_count = 0
         offending_count = 0
         total_monthly_savings = 0.0
@@ -62,32 +74,31 @@ class ScheduledCronAuditor:
         prs_skipped = 0
         workload_results: list[AuditWorkloadResult] = []
 
-        for f in py_files:
-            # Skip test files or caches
-            if f.name.startswith("test_") or "__pycache__" in str(f):
-                continue
-
+        for f in files:
             try:
                 content = f.read_text(encoding="utf-8")
             except (OSError, UnicodeDecodeError):
                 continue
 
-            # Quick check if PySpark script
-            if "spark" not in content.lower() and "pyspark" not in content.lower():
+            is_sql = f.suffix == ".sql"
+            if not is_sql and "spark" not in content.lower() and "pyspark" not in content.lower():
                 continue
 
             scanned_count += 1
-            inspection = self.analyzer.inspect(content, str(f))
+            if is_sql:
+                dialect = "bigquery" if "bigquery" in str(f).lower() else "snowflake"
+                inspection = sql_analyzer.inspect(content, str(f), dialect=dialect)
+                engine = "bigquery" if dialect == "bigquery" else "snowflake"
+            else:
+                inspection = self.analyzer.inspect(content, str(f))
+                engine = "glue"
+                if "emr" in str(f).lower():
+                    engine = "emr_serverless"
+                elif "databricks" in str(f).lower():
+                    engine = "databricks"
 
             if inspection.anti_patterns_count == 0:
                 continue
-
-            # Determine engine
-            engine = "glue"
-            if "emr" in str(f).lower():
-                engine = "emr_serverless"
-            elif "databricks" in str(f).lower():
-                engine = "databricks"
 
             # Compute FinOps ROI
             try:

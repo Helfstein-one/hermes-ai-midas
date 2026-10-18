@@ -139,7 +139,23 @@ class DeterministicModelRouter:
         return self._execute_tier_3(request, fallback_chain)
 
     def _execute_tier_3(self, request: RefactoringRequest, fallback_chain: list[str]) -> RefactoringResponse:
-        """Execute deterministic AST patching with validation."""
+        """Execute deterministic AST / SQL patching with validation."""
+        if request.file_path.endswith(".sql"):
+            from hermes_midas.sql_analyzer import SQLAnalyzer
+
+            dialect = "bigquery" if request.engine == "bigquery" else "snowflake"
+            sql_analyzer = SQLAnalyzer()
+            sql_inspection = sql_analyzer.inspect(request.original_code, request.file_path, dialect=dialect)
+            return RefactoringResponse(
+                optimized_code=sql_inspection.optimized_code,
+                diff=sql_inspection.diff,
+                explanation=f"Remediated {len(sql_inspection.anti_patterns)} SQL anti-patterns via deterministic SQLGlot rules.",
+                tier_used=ModelTier.DETERMINISTIC_OFFLINE,
+                provider_name="hermes-sqlglot-transformer-v1",
+                fallback_chain=fallback_chain,
+                ast_valid=sql_inspection.is_valid,
+            )
+
         inspection = self.analyzer.inspect(request.original_code, request.file_path)
 
         return RefactoringResponse(
