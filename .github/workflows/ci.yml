@@ -81,6 +81,7 @@ jobs:
           test -f "docs/architecture/assets/hermes_midas_terminal_and_pr_demo.png" || exit 1
           test -f "docs/architecture/assets/hermes_agent_avatar.jpg" || exit 1
           test -f "docs/architecture/hermes_midas_local.drawio" || exit 1
+          test -f "docs/architecture/assets/hermes_midas_local.png" || exit 1
           echo "All official Draw.io and architectural PNG assets verified."
 
   # ============================================================================

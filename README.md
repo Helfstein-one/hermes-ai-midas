@@ -119,21 +119,20 @@ make down
 
 ---
 
-## 🖼️ 3. Arquitetura de Referência em Produção (AWS & Draw.io)
+## 🖼️ 3. Arquitetura de Referência em Produção e Local (AWS & Draw.io)
 
-O `hermes-ai-midas` disponibiliza dois desenhos técnicos oficiais com padrões do **AWS Architecture Center (Ícones Oficiais 2026)**, cobrindo tanto a execução in-VPC quanto a governança enterprise multi-conta:
+O `hermes-ai-midas` disponibiliza três desenhos técnicos oficiais com padrões do **AWS Architecture Center (Ícones Oficiais 2026)** e topologia de contêineres, cobrindo a execução in-VPC, governança enterprise multi-conta e emulação local isolada:
 
-### 2.1. Arquitetura de Produção in-VPC (Execução Serverless no ECS Fargate)
+### 3.1. Arquitetura de Produção in-VPC (Execução Serverless no ECS Fargate)
 Projetada para isolamento estrito de rede, execução serverless no **AWS ECS Fargate**, ingress autenticado via HMAC-SHA256 e inferência dedicada via **Hermes AI** (Amazon Bedrock / SageMaker vLLM):
 
 ![Hermes-AI-Midas AWS Production Architecture](docs/architecture/assets/hermes_midas_aws_production.png)
 
-> 📁 **Arquivo Draw.io Editável:** [`docs/architecture/hermes_midas_aws_production.drawio`](docs/architecture/hermes_midas_aws_production.drawio) (abra diretamente no [diagrams.net](https://app.diagrams.net/)).  
-> 📁 **Topologia Local (Containers):** [`docs/architecture/hermes_midas_local.drawio`](docs/architecture/hermes_midas_local.drawio).
+> 📁 **Arquivo Draw.io Editável:** [`docs/architecture/hermes_midas_aws_production.drawio`](docs/architecture/hermes_midas_aws_production.drawio) (abra diretamente no [diagrams.net](https://app.diagrams.net/)).
 
 ---
 
-### 2.2. Arquitetura Enterprise Multi-Conta (AWS Organizations & Data Mesh FinOps Hub)
+### 3.2. Arquitetura Enterprise Multi-Conta (AWS Organizations & Data Mesh FinOps Hub)
 Projetada para grandes organizações operando em modelo **Data Mesh / Landing Zone**. A Conta Central de FinOps & Governança (`111122223333`) monitora e audita contas produtoras distribuídas via **AWS Transit Gateway (TGW)** e **STS AssumeRole** de mínimo privilégio:
 
 ![Hermes-AI-Midas AWS Multi-Account Architecture](docs/architecture/assets/hermes_midas_aws_multi_account.png)
@@ -145,6 +144,24 @@ Projetada para grandes organizações operando em modelo **Data Mesh / Landing Z
 > - **Cross-Account FastMCP:** O servidor `mcp_aws_ce.py` e `mcp_cloudwatch.py` utilizam `sts:AssumeRole` para inspecionar logs e séries temporais de custos nas contas produtoras.
 > - **Estado & Idempotência com DynamoDB:** Tabela `midas_pr_registry` armazena fingerprints SHA-256 evitando abertura de PRs concorrentes ou redundantes.
 > - **FinOps Lakehouse (CUR 2.0 + Athena):** Ingestão contínua do AWS Cost & Usage Report particionado em Parquet no Amazon S3 para análises preditivas com Amazon Athena.
+
+---
+
+### 3.3. Arquitetura Local Emulada (Topologia de Contêineres Podman / Docker)
+Projetada para desenvolvimento local, auditorias de esteiras CI/CD e testes 100% gratuitos e air-gapped (sem envio de código proprietário para nuvens externas nem custos de infraestrutura):
+
+![Hermes-AI-Midas Local Emulation Architecture](docs/architecture/assets/hermes_midas_local.png)
+
+> 📁 **Arquivo Draw.io Editável:** [`docs/architecture/hermes_midas_local.drawio`](docs/architecture/hermes_midas_local.drawio) (vetorial editável no [diagrams.net](https://app.diagrams.net/)).
+>
+> **Destaques da Topologia Local (`compose.yaml`):**
+> - **Rede Virtual Bridge `midas-net` (`172.28.0.0/16`):** Comunicação privada entre contêineres sem exposição indesejada de portas à internet pública.
+> - **Emulação Cloud Completa (`midas-moto` - `:4566`):** Mock de buckets S3 (`midas-data-lake`), Glue Data Catalog e CloudWatch Logs Insights com persistência em volume `moto-data`.
+> - **Gateway FinOps Determinístico (`cost-explorer-mock` - `:8010`):** Serviço FastAPI mockando a API Cost Explorer com as tabelas oficiais da AWS para retorno imediato dos top 10 maiores ofensores de custo.
+> - **Servidor Git Local (`midas-gitea` - `:3000` / `:2222`):** Permite que o agente crie branches `midas/finops-*` e submeta Pull Requests completos com diffs de código sem poluir o GitHub remoto.
+> - **Inferência Local com Soberania de Dados (`midas-ollama` - `:11434`):** Execução do modelo `hermes3:8b` (Nous Research) em GPU/Metal local com zero retenção de dados e suporte estrito ao protocolo FastMCP.
+> - **Orquestrador de DAGs (`midas-airflow` - `:8080`):** Execução dos 5 pipelines de teste disparando automaticamente o webhook HMAC-SHA256 (`POST /api/v1/triggers/airflow`).
+> - **Barreira de Isolamento:** 153 testes automatizados executando em menos de 1,2 segundo com bloqueio determinístico de sockets para garantir zero vazamento de tráfego.
 
 ---
 
