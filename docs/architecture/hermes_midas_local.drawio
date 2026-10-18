@@ -1,0 +1,54 @@
+<mxfile host="app.diagrams.net" modified="2026-10-16T13:41:00.000Z" agent="Antigravity Hermes Midas" version="22.1.0" type="device">
+  <diagram id="hermes-midas-local" name="Hermes Midas Local Emulation Topology">
+    <mxGraphModel dx="1200" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="600" background="#0B0F19" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title_local" value="&lt;b style='font-size:18px; color:#F59E0B;'&gt;👑 HERMES-AI-MIDAS — Local Container Emulation Topology (Podman / Docker)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E293B;strokeColor=#334155;align=center;arcSize=10;" vertex="1" parent="1">
+          <mxGeometry x="30" y="20" width="1140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="net_box" value="Bridge Network: midas-net (100% Free / Zero Cloud Billing)" style="swimlane;whiteSpace=wrap;html=1;fillColor=#0F172A;strokeColor=#10B981;fontColor=#34D399;fontStyle=1;startSize=26;rounded=1;" vertex="1" parent="1">
+          <mxGeometry x="30" y="90" width="1140" height="470" as="geometry" />
+        </mxCell>
+
+        <!-- Container 1: Moto/LocalStack -->
+        <mxCell id="c_moto" value="&lt;b&gt;moto / localstack&lt;/b&gt;&lt;br/&gt;&lt;span style='font-size:10px;'&gt;Port 4566:5000&lt;br/&gt;S3, Glue, CloudWatch Logs/Metrics&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E293B;strokeColor=#38BDF8;fontColor=#FFFFFF;" vertex="1" parent="net_box">
+          <mxGeometry x="30" y="50" width="230" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Container 2: Cost Explorer Mock -->
+        <mxCell id="c_ce" value="&lt;b&gt;cost-explorer-mock&lt;/b&gt;&lt;br/&gt;&lt;span style='font-size:10px;'&gt;Port 8010:8010 (FastAPI)&lt;br/&gt;GetCostAndUsage &amp; Top Offenders&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E293B;strokeColor=#F59E0B;fontColor=#FFFFFF;" vertex="1" parent="net_box">
+          <mxGeometry x="290" y="50" width="230" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Container 3: Gitea Git Server -->
+        <mxCell id="c_gitea" value="&lt;b&gt;gitea (Git Server)&lt;/b&gt;&lt;br/&gt;&lt;span style='font-size:10px;'&gt;Port 3000:3000&lt;br/&gt;REST v1 API + Branch/PR Management&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E293B;strokeColor=#10B981;fontColor=#FFFFFF;" vertex="1" parent="net_box">
+          <mxGeometry x="550" y="50" width="230" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Container 4: Ollama Local Inference -->
+        <mxCell id="c_ollama" value="&lt;b&gt;ollama (Local LLM)&lt;/b&gt;&lt;br/&gt;&lt;span style='font-size:10px;'&gt;Port 11434:11434&lt;br/&gt;hermes3:8b &amp; qwen2.5-coder:7b&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E293B;strokeColor=#C084FC;fontColor=#FFFFFF;" vertex="1" parent="net_box">
+          <mxGeometry x="810" y="50" width="230" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Container 5: Airflow -->
+        <mxCell id="c_airflow" value="&lt;b&gt;apache/airflow:2.10.2&lt;/b&gt;&lt;br/&gt;&lt;span style='font-size:10px;'&gt;Port 8080:8080 (Standalone)&lt;br/&gt;Seed ELT DAGs &amp; Webhook Trigger&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1E293B;strokeColor=#EC4899;fontColor=#FFFFFF;" vertex="1" parent="net_box">
+          <mxGeometry x="30" y="200" width="230" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- Container 6: hermes-midas -->
+        <mxCell id="c_midas" value="&lt;b style='font-size:14px; color:#F59E0B;'&gt;👑 hermes-midas (Core Container)&lt;/b&gt;&lt;br/&gt;&lt;span style='font-size:11px;'&gt;Port 8000:8000 (FastAPI Webhooks &amp; Cron Auditor)&lt;br/&gt;FastMCP Tools (stdio) • Deterministic FinOps • AST Patcher&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#312E81;strokeColor=#6366F1;strokeWidth=2;fontColor=#FFFFFF;" vertex="1" parent="net_box">
+          <mxGeometry x="290" y="190" width="750" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Test Suite Execution -->
+        <mxCell id="c_tests" value="&lt;b&gt;Offline Test Suite (153 Tests):&lt;/b&gt; &lt;code&gt;uv run pytest -v&lt;/code&gt; executes in &amp;lt; 1 second with 100% offline network isolation socket guards." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#064E3B;strokeColor=#10B981;fontColor=#D1FAE5;align=center;" vertex="1" parent="net_box">
+          <mxGeometry x="30" y="350" width="1010" height="80" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

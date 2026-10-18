@@ -1,0 +1,177 @@
+# hermes-ai-midas container orchestration topology
+# Compatible with Podman 5.x (podman compose / podman-compose) and Docker Compose
+
+services:
+  # 1. AWS Services Core: S3, AWS Glue Data Catalog & Jobs, CloudWatch Metrics & Logs
+  moto:
+    image: motoserver/moto:5.0.28
+    container_name: midas-moto
+    hostname: moto
+    ports:
+      - "4566:5000"
+    environment:
+      - MOTO_PORT=5000
+      - AWS_DEFAULT_REGION=us-east-1
+      - SERVICES=s3,glue,cloudwatch,logs
+    volumes:
+      - moto-data:/data
+    networks:
+      - midas-net
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:5000/moto-api/\")' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 3s
+
+  # 2. AWS Cost Explorer Mock API & FinOps Gateway
+  cost-explorer-mock:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hermes-midas-base:latest
+    container_name: midas-cost-explorer-mock
+    hostname: cost-explorer-mock
+    working_dir: /app
+    ports:
+      - "8010:8010"
+    environment:
+      - PORT=8010
+      - MOTO_ENDPOINT_URL=http://moto:5000
+      - MIDAS_OFFLINE_MODE=1
+      - PYTHONPATH=/app
+      - MIDAS_WORKLOADS_DIR=/app/workloads
+    volumes:
+      - ./workloads:/app/workloads:ro
+      - ./src/hermes_midas:/app/hermes_midas:ro
+    command: python -m uvicorn hermes_midas.topology.mock_cost_explorer:app --host 0.0.0.0 --port 8010
+    networks:
+      - midas-net
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://127.0.0.1:8010/health\")' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
+
+  # 3. Gitea Git Server (Rootless, REST API v1 + Git over HTTP/SSH)
+  gitea:
+    image: gitea/gitea:1.22.6-rootless
+    container_name: midas-gitea
+    hostname: gitea
+    ports:
+      - "3000:3000"
+      - "2222:2222"
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__security__INSTALL_LOCK=true
+      - GITEA__server__ROOT_URL=http://localhost:3000/
+      - GITEA__server__HTTP_PORT=3000
+      - GITEA__server__SSH_PORT=2222
+      - GITEA__service__DISABLE_REGISTRATION=false
+      - GITEA__webhook__ALLOWED_HOST_LIST=*
+    volumes:
+      - gitea-data:/var/lib/gitea
+      - gitea-config:/etc/gitea
+    networks:
+      - midas-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:3000/api/v1/version || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # 4. Apache Airflow 2.10 (Standalone mode with Scheduler + Webserver)
+  airflow:
+    image: apache/airflow:2.10.2-python3.11
+    container_name: midas-airflow
+    hostname: airflow
+    ports:
+      - "8080:8080"
+    environment:
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=true
+      - AIRFLOW__API__AUTH_BACKENDS=airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session
+      - _AIRFLOW_DB_MIGRATE=true
+      - _AIRFLOW_WWW_USER_CREATE=true
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - MIDAS_TRIGGER_WEBHOOK_URL=http://hermes-midas:8000/api/v1/triggers/airflow
+    volumes:
+      - airflow-data:/opt/airflow
+    command: airflow standalone
+    networks:
+      - midas-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # 5. Ollama Local LLM Engine
+  ollama:
+    image: ollama/ollama:latest
+    container_name: midas-ollama
+    hostname: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - midas-net
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # 6. Automated Seed Provisioner Daemon
+  seed-provisioner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hermes-midas-base:latest
+    container_name: midas-seed-provisioner
+    working_dir: /app
+    depends_on:
+      moto:
+        condition: service_healthy
+      cost-explorer-mock:
+        condition: service_healthy
+      gitea:
+        condition: service_healthy
+    environment:
+      - AWS_ENDPOINT_URL=http://moto:5000
+      - COST_EXPLORER_URL=http://cost-explorer-mock:8010
+      - GITEA_URL=http://gitea:3000
+      - GITEA_TOKEN=midas-admin-token-12345
+      - AWS_ACCESS_KEY_ID=mock_key
+      - AWS_SECRET_ACCESS_KEY=mock_secret
+      - AWS_DEFAULT_REGION=us-east-1
+      - PYTHONPATH=/app
+      - MIDAS_WORKLOADS_DIR=/app/workloads
+      - MIDAS_OFFLINE_MODE=1
+    volumes:
+      - ./workloads:/app/workloads:ro
+      - ./src/hermes_midas:/app/hermes_midas:ro
+    command: python -m hermes_midas.topology.seed_loader --provision-moto --moto-url http://moto:5000
+    networks:
+      - midas-net
+    restart: "no"
+
+networks:
+  midas-net:
+    name: midas-net
+    driver: bridge
+
+volumes:
+  moto-data:
+  gitea-data:
+  gitea-config:
+  airflow-data:
+  ollama-data:

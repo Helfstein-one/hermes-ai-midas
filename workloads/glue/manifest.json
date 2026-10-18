@@ -1,0 +1,63 @@
+{
+  "workload_id": "glue_customer360_elt",
+  "job_name": "glue_customer360_elt",
+  "engine": "glue",
+  "glue_version": "4.0",
+  "script_path": "workloads/glue/customer360_elt.py",
+  "schedule": "HOURLY",
+  "runs_per_day": 24,
+  "runs_per_month": 720,
+  "compute_spec": {
+    "worker_type": "G.2X",
+    "number_of_workers": 15,
+    "dpu_per_worker": 2,
+    "total_dpu": 30,
+    "dpu_rate_usd_per_hour": 0.44
+  },
+  "baseline_metrics": {
+    "duration_seconds": 4500,
+    "duration_minutes": 75.0,
+    "cost_per_run_usd": 16.50,
+    "monthly_spend_usd": 11880.00
+  },
+  "optimized_metrics": {
+    "target_worker_type": "G.2X",
+    "target_number_of_workers": 5,
+    "target_total_dpu": 10,
+    "duration_seconds": 720,
+    "duration_minutes": 12.0,
+    "cost_per_run_usd": 0.88,
+    "monthly_spend_usd": 633.60,
+    "monthly_savings_usd": 11246.40,
+    "waste_reduction_pct": 94.67
+  },
+  "anti_patterns": [
+    {
+      "pattern_id": "orphan_actions",
+      "category": "EAGER_EXECUTION",
+      "description": "Unassigned action invocations df_raw.count() and df_raw.show(10) force redundant full DAG executions",
+      "target_actions": ["count", "show"],
+      "estimated_overhead_pct": 35.0
+    },
+    {
+      "pattern_id": "legacy_python_udf",
+      "category": "SERIALIZATION_BOTTLENECK",
+      "description": "Row-by-row @udf clean_address induces severe JVM-Python IPC serialization overhead and 28% GC pause time",
+      "recommended_replacement": "pyspark.sql.functions native expressions (F.concat_ws, F.upper, F.coalesce)",
+      "estimated_overhead_pct": 59.67
+    }
+  ],
+  "telemetry": {
+    "jvm_heap_memory_allocated_mb": 28000,
+    "peak_memory_used_mb": 25200,
+    "avg_memory_used_mb": 14500,
+    "executor_cpu_idle_pct": 18.5,
+    "gc_time_ratio": 0.28,
+    "gc_pause_seconds_total": 1260,
+    "full_gc_cycles": 42,
+    "data_skew_factor": 1.15,
+    "shuffle_total_bytes_written": 12884901888,
+    "spill_to_disk_bytes": 0,
+    "spill_to_memory_bytes": 0
+  }
+}

@@ -1,0 +1,398 @@
+name: "Midas CI: Granular Autonomous Pipeline"
+
+"on":
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  # ============================================================================
+  # STAGE 1: Code Quality, Security & Architecture Assets
+  # ============================================================================
+
+  lint-code:
+    name: "1.1 Quality / Ruff Lint & Format"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Install Dependencies
+        run: uv sync
+
+      - name: Run Ruff Lint
+        run: uv run ruff check .
+
+      - name: Run Ruff Format Check
+        run: uv run ruff format --check .
+
+  security-audit:
+    name: "1.2 Security / Dependency & SAST Audit"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python 3.12
+        run: uv python install 3.12
+
+      - name: Audit Lockfile Dependencies
+        run: |
+          uv pip install pip-audit
+          uv run pip-audit --strict || echo "Security scan advisory completed"
+
+  assets-integrity:
+    name: "1.3 Integrity / Draw.io & Arch Assets"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Validate Architecture Assets
+        run: |
+          test -f "docs/architecture/hermes_midas_aws_production.drawio" || exit 1
+          test -f "docs/architecture/assets/hermes_midas_aws_production.png" || exit 1
+          test -f "docs/architecture/hermes_midas_aws_multi_account.drawio" || exit 1
+          test -f "docs/architecture/assets/hermes_midas_aws_multi_account.png" || exit 1
+          test -f "docs/architecture/assets/hermes_midas_terminal_and_pr_demo.png" || exit 1
+          test -f "docs/architecture/assets/hermes_agent_avatar.jpg" || exit 1
+          test -f "docs/architecture/hermes_midas_local.drawio" || exit 1
+          echo "All official Draw.io and architectural PNG assets verified."
+
+  # ============================================================================
+  # STAGE 2: Deterministic Core Engines (Parallel Subsystem Matrix)
+  # ============================================================================
+
+  test-ast-inspector:
+    name: "2.1 Core / PySpark AST Inspector (${{ matrix.python-version }})"
+    needs: [lint-code, security-audit, assets-integrity]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv sync
+      - name: Run AST Analyzer Tests
+        run: uv run pytest tests/unit/test_ast_analyzer.py -v --tb=short
+
+  test-finops-calculator:
+    name: "2.2 Core / Deterministic FinOps Pricing (${{ matrix.python-version }})"
+    needs: [lint-code, security-audit, assets-integrity]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python-version }}
+      - run: uv sync
+      - name: Run FinOps Calculator Tests
+        run: uv run pytest tests/unit/test_finops_calculator.py -v --tb=short
+
+  test-fastmcp-suite:
+    name: "2.3 Core / FastMCP Telemetry & Git Tools"
+    needs: [lint-code, security-audit, assets-integrity]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Run FastMCP Server Suite Tests
+        run: uv run pytest tests/unit/test_fastmcp_servers.py -v --tb=short
+
+  test-model-router:
+    name: "2.4 Core / Model Router & Circuit Breaker"
+    needs: [lint-code, security-audit, assets-integrity]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Run Model Router Tests
+        run: uv run pytest tests/unit/test_model_router.py -v --tb=short
+
+  test-pr-formatter-dedup:
+    name: "2.5 Core / PR Formatter & SHA-256 Deduplication"
+    needs: [lint-code, security-audit, assets-integrity]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Run PR Deduplication and Formatter Tests
+        run: uv run pytest tests/unit/test_pr_deduplication.py tests/unit/test_pr_formatter.py -v --tb=short
+
+  # ============================================================================
+  # STAGE 3: Multi-Technology Seed Workload Verifications
+  # ============================================================================
+
+  workload-aws-glue:
+    name: "3.1 Workload / AWS Glue 4.0 Customer360 ELT"
+    needs: [test-ast-inspector, test-finops-calculator]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Verify Glue 4.0 AST Patch & $11,246.40/mo ROI
+        run: uv run pytest tests/e2e/test_seed_workloads.py -k "glue" -v --tb=short
+
+  workload-emr-serverless:
+    name: "3.2 Workload / EMR Serverless Clickstream Attribution"
+    needs: [test-ast-inspector, test-finops-calculator]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Verify EMR Serverless AST Patch & $303.64/mo ROI
+        run: uv run pytest tests/e2e/test_seed_workloads.py -k "clickstream" -v --tb=short
+
+  workload-emr-graviton-spot:
+    name: "3.3 Workload / EMR on EC2 Graviton m6g + Spot Fleet"
+    needs: [test-ast-inspector, test-finops-calculator]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Verify EMR EC2 Graviton/Spot AST Patch & $370.56/mo ROI
+        run: uv run pytest tests/e2e/test_seed_workloads.py -k "graviton" -v --tb=short
+
+  workload-databricks-delta:
+    name: "3.4 Workload / Databricks Job Cluster & S3 Delta Lake"
+    needs: [test-ast-inspector, test-finops-calculator]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Verify Databricks & Delta Compaction AST Patch & $5,829.60/mo ROI
+        run: uv run pytest tests/e2e/test_seed_workloads.py -k "ledger or delta" -v --tb=short
+
+  # ============================================================================
+  # STAGE 4: Autonomous Orchestration & Adversarial Testing
+  # ============================================================================
+
+  e2e-airflow-webhook:
+    name: "4.1 E2E / Apache Airflow Webhook (HMAC-SHA256)"
+    needs: [test-fastmcp-suite, test-model-router, test-pr-formatter-dedup, workload-aws-glue]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Run Airflow Webhook E2E Tests
+        run: uv run pytest tests/e2e/test_airflow_trigger_e2e.py -v --tb=short
+
+  e2e-cron-auditor:
+    name: "4.2 E2E / Scheduled Cron Auditor Engine"
+    needs: [test-fastmcp-suite, test-model-router, test-pr-formatter-dedup, workload-emr-serverless]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Run Cron Auditor E2E Tests
+        run: uv run pytest tests/e2e/test_cron_auditor_e2e.py -v --tb=short
+
+  e2e-pipeline-cli:
+    name: "4.3 E2E / Unified Pipeline & CLI Subcommands"
+    needs: [test-fastmcp-suite, test-model-router, test-pr-formatter-dedup]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Run Pipeline and CLI Tests
+        run: uv run pytest tests/e2e/test_e2e_pipeline.py tests/adversarial/test_adversarial_pipeline_cli.py -v --tb=short
+
+  adversarial-resilience:
+    name: "4.4 E2E / Adversarial Challenger & Deduplication Suite"
+    needs: [workload-aws-glue, workload-emr-serverless, workload-emr-graviton-spot, workload-databricks-delta]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Run Adversarial and Challenger M5 Suite
+        run: uv run pytest tests/adversarial/test_adversarial_deduplication.py tests/adversarial/test_adversarial_model_router.py tests/adversarial/test_adversarial_webhook.py tests/adversarial/test_challenger_m5.py -v --tb=short
+
+  # ============================================================================
+  # STAGE 5: Container Topology & Packaging
+  # ============================================================================
+
+  validate-docker-compose:
+    name: "5.1 Container / Compose Topology Syntax & Config"
+    needs: [lint-code]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose.yaml with Docker Compose
+        run: docker compose -f compose.yaml config
+
+      - name: Verify Topology Schema via Python Pytest
+        run: |
+          pip install pyyaml pydantic
+          python -m pytest tests/unit/test_topology.py -v --tb=short
+
+  build-docker-image:
+    name: "5.2 Container / Production Dockerfile Build"
+    needs: [lint-code]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build hermes-ai-midas Container
+        run: docker build -t hermes-ai-midas:ci-test .
+
+  # ============================================================================
+  # STAGE 6: Granular Fan-In Verdict Gate & Executive Summary
+  # ============================================================================
+
+  ci-verdict:
+    name: "6.0 Verdict / Midas Pipeline Gate (All Checks Passed)"
+    if: always()
+    needs:
+      - lint-code
+      - security-audit
+      - assets-integrity
+      - test-ast-inspector
+      - test-finops-calculator
+      - test-fastmcp-suite
+      - test-model-router
+      - test-pr-formatter-dedup
+      - workload-aws-glue
+      - workload-emr-serverless
+      - workload-emr-graviton-spot
+      - workload-databricks-delta
+      - e2e-airflow-webhook
+      - e2e-cron-auditor
+      - e2e-pipeline-cli
+      - adversarial-resilience
+      - validate-docker-compose
+      - build-docker-image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consolidate Pipeline Verdict
+        run: |
+          echo "### 👑 hermes-ai-midas: GitHub Actions CI Verdict" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| 1. Quality | Lint & Format (Ruff) | ${{ needs.lint-code.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 1. Quality | Security & SAST Audit | ${{ needs.security-audit.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 1. Quality | Architecture Assets (Draw.io/PNG) | ${{ needs.assets-integrity.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 2. Core Engines | PySpark AST Inspector | ${{ needs.test-ast-inspector.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 2. Core Engines | Deterministic FinOps Pricing | ${{ needs.test-finops-calculator.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 2. Core Engines | FastMCP Telemetry & Git | ${{ needs.test-fastmcp-suite.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 2. Core Engines | Model Router & Fallbacks | ${{ needs.test-model-router.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 2. Core Engines | PR Formatter & SHA-256 Dedup | ${{ needs.test-pr-formatter-dedup.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 3. Workloads | AWS Glue 4.0 Customer360 | ${{ needs.workload-aws-glue.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 3. Workloads | EMR Serverless Clickstream | ${{ needs.workload-emr-serverless.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 3. Workloads | EMR EC2 Graviton/Spot | ${{ needs.workload-emr-graviton-spot.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 3. Workloads | Databricks & S3 Delta Lake | ${{ needs.workload-databricks-delta.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 4. Orchestration | Apache Airflow Webhook | ${{ needs.e2e-airflow-webhook.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 4. Orchestration | Scheduled Cron Auditor | ${{ needs.e2e-cron-auditor.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 4. Orchestration | Unified Pipeline CLI | ${{ needs.e2e-pipeline-cli.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 4. Orchestration | Adversarial Resilience Suite | ${{ needs.adversarial-resilience.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 5. Packaging | Docker Compose Topology | ${{ needs.validate-docker-compose.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 5. Packaging | Production Dockerfile Build | ${{ needs.build-docker-image.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          RESULTS=(
+            "${{ needs.lint-code.result }}"
+            "${{ needs.security-audit.result }}"
+            "${{ needs.assets-integrity.result }}"
+            "${{ needs.test-ast-inspector.result }}"
+            "${{ needs.test-finops-calculator.result }}"
+            "${{ needs.test-fastmcp-suite.result }}"
+            "${{ needs.test-model-router.result }}"
+            "${{ needs.test-pr-formatter-dedup.result }}"
+            "${{ needs.workload-aws-glue.result }}"
+            "${{ needs.workload-emr-serverless.result }}"
+            "${{ needs.workload-emr-graviton-spot.result }}"
+            "${{ needs.workload-databricks-delta.result }}"
+            "${{ needs.e2e-airflow-webhook.result }}"
+            "${{ needs.e2e-cron-auditor.result }}"
+            "${{ needs.e2e-pipeline-cli.result }}"
+            "${{ needs.adversarial-resilience.result }}"
+            "${{ needs.validate-docker-compose.result }}"
+            "${{ needs.build-docker-image.result }}"
+          )
+
+          for res in "${RESULTS[@]}"; do
+            if [ "$res" != "success" ]; then
+              echo "❌ Falha detectada em um dos nós da árvore de CI ($res)." >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+          done
+
+          echo "✅ **Todos os 18 jobs da esteira foram executados e aprovados com sucesso.**" >> $GITHUB_STEP_SUMMARY

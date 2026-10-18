@@ -1,0 +1,49 @@
+{
+  "workload_id": "delta_compaction_optimizer",
+  "job_name": "delta_compaction_optimizer",
+  "engine": "spark_delta",
+  "spark_version": "3.4.0",
+  "script_path": "workloads/delta_lake/compaction_optimizer.py",
+  "schedule": "HOURLY",
+  "runs_per_day": 24,
+  "runs_per_month": 720,
+  "compute_spec": {
+    "engine": "spark_delta",
+    "allocated_cores": 32,
+    "allocated_memory_gb": 128,
+    "hourly_compute_rate_usd": 2.45
+  },
+  "baseline_metrics": {
+    "duration_seconds": 1800,
+    "duration_minutes": 30.0,
+    "cost_per_run_usd": 1.225,
+    "monthly_spend_usd": 882.00
+  },
+  "optimized_metrics": {
+    "target_cores": 16,
+    "target_memory_gb": 64,
+    "duration_seconds": 360,
+    "duration_minutes": 6.0,
+    "cost_per_run_usd": 0.1225,
+    "monthly_spend_usd": 88.20,
+    "monthly_savings_usd": 793.80,
+    "waste_reduction_pct": 90.00
+  },
+  "anti_patterns": [
+    {
+      "pattern_id": "orphan_actions",
+      "category": "EAGER_EXECUTION",
+      "description": "df_events.show(5) forces intermediate DAG materialization"
+    },
+    {
+      "pattern_id": "excessive_repartition",
+      "category": "PARTITIONING_BOTTLENECK",
+      "description": ".repartition(500) generates micro-files causing S3 metadata latency"
+    },
+    {
+      "pattern_id": "suboptimal_partition",
+      "category": "STORAGE_LAYOUT",
+      "description": "Delta table written without partitionBy(event_date)"
+    }
+  ]
+}

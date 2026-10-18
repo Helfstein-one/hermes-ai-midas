@@ -1,0 +1,75 @@
+{
+  "workload_id": "databricks_financial_ledger_sync",
+  "job_name": "databricks_financial_ledger_sync",
+  "engine": "databricks",
+  "runtime_version": "13.3 LTS",
+  "script_path": "workloads/databricks/financial_ledger_sync.py",
+  "schedule": "DAILY",
+  "runs_per_day": 1,
+  "runs_per_month": 30,
+  "compute_spec": {
+    "node_type": "r5.4xlarge",
+    "node_count": 64,
+    "vcpu_per_node": 16,
+    "memory_gb_per_node": 128,
+    "total_vcpu": 1024,
+    "total_memory_gb": 8192,
+    "dbu_per_node_hr": 1.5,
+    "dbu_rate_usd": 0.15,
+    "ec2_rate_usd_per_node_hr": 1.008,
+    "total_rate_usd_per_node_hr": 1.233,
+    "cluster_hourly_rate_usd": 78.912
+  },
+  "baseline_metrics": {
+    "duration_seconds": 9000,
+    "duration_hours": 2.5,
+    "cost_per_run_usd": 197.28,
+    "monthly_spend_usd": 5918.40
+  },
+  "optimized_metrics": {
+    "target_node_count": 8,
+    "duration_seconds": 1080,
+    "duration_minutes": 18.0,
+    "cost_per_run_usd": 2.9592,
+    "monthly_spend_usd": 88.80,
+    "monthly_savings_usd": 5829.60,
+    "waste_reduction_pct": 98.50
+  },
+  "anti_patterns": [
+    {
+      "pattern_id": "key_skew",
+      "category": "PARTITION_SKEW",
+      "description": "groupBy('tenant_id', 'currency_code') has 90% of keys matching SYSTEM_DEFAULT, causing severe straggler task (7,080s vs 192s median)",
+      "skew_factor": 15.2,
+      "recommended_replacement": "Two-phase salted aggregation using F.concat(tenant_id, lit('_'), (rand() * 16).cast('int'))"
+    },
+    {
+      "pattern_id": "disk_spill",
+      "category": "MEMORY_EXHAUSTION",
+      "description": "Extreme shuffle partition size forces 88.5GB disk spill and triggers 184 full GC cycles",
+      "spill_to_disk_bytes": 88583700480
+    },
+    {
+      "pattern_id": "cluster_overprovisioning",
+      "category": "INFRASTRUCTURE_WASTE",
+      "description": "64 worker nodes provisioned to supply aggregate heap, leaving 63 nodes 86.4% idle for 2+ hours",
+      "idle_percentage": 86.4,
+      "wasted_core_hours": 2201.6
+    }
+  ],
+  "telemetry": {
+    "jvm_heap_memory_allocated_mb": 8388608,
+    "peak_memory_used_mb": 8224000,
+    "avg_memory_used_mb": 2188800,
+    "executor_cpu_idle_pct": 86.4,
+    "gc_time_ratio": 0.44,
+    "gc_pause_seconds_total": 3960,
+    "full_gc_cycles": 184,
+    "data_skew_factor": 15.2,
+    "max_task_duration_seconds": 7080,
+    "median_task_duration_seconds": 192,
+    "shuffle_total_bytes_written": 236223201280,
+    "spill_to_disk_bytes": 88583700480,
+    "spill_to_memory_bytes": 142857142857
+  }
+}

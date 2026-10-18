@@ -1,0 +1,67 @@
+{
+  "workload_id": "emr_clickstream_attribution",
+  "job_name": "emr_clickstream_attribution",
+  "engine": "emr_serverless",
+  "spark_version": "3.4.1",
+  "script_path": "workloads/emr/clickstream_attribution.py",
+  "schedule": "DAILY",
+  "runs_per_day": 1,
+  "runs_per_month": 30,
+  "compute_spec": {
+    "driver_vcpu": 4,
+    "driver_memory_gb": 16,
+    "executor_count": 9,
+    "executor_vcpu": 4,
+    "executor_memory_gb": 16,
+    "total_vcpu": 40,
+    "total_memory_gb": 160,
+    "vcpu_rate_usd_per_hour": 0.05238,
+    "memory_rate_usd_per_gb_hour": 0.00577
+  },
+  "baseline_metrics": {
+    "duration_seconds": 12600,
+    "duration_hours": 3.5,
+    "cost_per_run_usd": 10.5644,
+    "monthly_spend_usd": 316.93
+  },
+  "optimized_metrics": {
+    "target_vcpu": 16,
+    "target_memory_gb": 64,
+    "duration_seconds": 1320,
+    "duration_minutes": 22.0,
+    "cost_per_run_usd": 0.4430,
+    "monthly_spend_usd": 13.29,
+    "monthly_savings_usd": 303.64,
+    "waste_reduction_pct": 95.81
+  },
+  "anti_patterns": [
+    {
+      "pattern_id": "unbroadcasted_join",
+      "category": "SHUFFLE_BOTTLENECK",
+      "description": "Inner join with small 15MB dimension table dim_campaigns lacks broadcast hint, inducing 451GB shuffle data exchange",
+      "target_table": "dim_campaigns",
+      "recommended_replacement": "F.broadcast(dim_campaigns)",
+      "estimated_overhead_pct": 52.0
+    },
+    {
+      "pattern_id": "micro_partitioning",
+      "category": "IO_BOTTLENECK",
+      "description": "repartition(10000) generates excessive small partitions (<80KB) resulting in S3 API request throttling and scheduling overhead",
+      "recommended_replacement": "coalesce(64) or adaptive query execution (AQE)",
+      "estimated_overhead_pct": 43.81
+    }
+  ],
+  "telemetry": {
+    "jvm_heap_memory_allocated_mb": 163840,
+    "peak_memory_used_mb": 112000,
+    "avg_memory_used_mb": 64000,
+    "executor_cpu_idle_pct": 68.2,
+    "gc_time_ratio": 0.08,
+    "gc_pause_seconds_total": 1008,
+    "full_gc_cycles": 12,
+    "data_skew_factor": 8.4,
+    "shuffle_total_bytes_written": 450971566080,
+    "spill_to_disk_bytes": 0,
+    "spill_to_memory_bytes": 0
+  }
+}

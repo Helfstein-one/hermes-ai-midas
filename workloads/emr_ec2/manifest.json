@@ -1,0 +1,59 @@
+{
+  "workload_id": "emr_ec2_graviton_spot",
+  "job_name": "emr_ec2_graviton_spot",
+  "engine": "emr_ec2",
+  "emr_version": "6.10",
+  "script_path": "workloads/emr_ec2/graviton_spot_cluster.py",
+  "schedule": "DAILY",
+  "runs_per_day": 1,
+  "runs_per_month": 30,
+  "compute_spec": {
+    "master_instance_type": "m5.2xlarge",
+    "core_instance_type": "m5.2xlarge",
+    "core_node_count": 8,
+    "task_instance_type": "m5.2xlarge",
+    "task_node_count": 8,
+    "market": "ON_DEMAND",
+    "hourly_cluster_cost_usd": 6.528
+  },
+  "baseline_metrics": {
+    "duration_seconds": 7200,
+    "duration_hours": 2.0,
+    "cost_per_run_usd": 13.056,
+    "monthly_spend_usd": 391.68
+  },
+  "optimized_metrics": {
+    "target_master_instance_type": "m6g.xlarge",
+    "target_core_instance_type": "m6g.xlarge",
+    "target_core_node_count": 4,
+    "target_task_instance_type": "m6g.xlarge",
+    "target_task_node_count": 4,
+    "target_task_market": "SPOT",
+    "duration_seconds": 1800,
+    "duration_hours": 0.5,
+    "cost_per_run_usd": 0.704,
+    "monthly_spend_usd": 21.12,
+    "monthly_savings_usd": 370.56,
+    "waste_reduction_pct": 94.61
+  },
+  "anti_patterns": [
+    {
+      "pattern_id": "orphan_actions",
+      "category": "EAGER_EXECUTION",
+      "description": "Standalone df_txns.count() triggers redundant S3 scans",
+      "target_actions": ["count"]
+    },
+    {
+      "pattern_id": "unbroadcasted_join",
+      "category": "SHUFFLE_BOTTLENECK",
+      "description": "Join with 8.5MB merchant metadata table missing broadcast hint",
+      "target_table": "df_merchants"
+    },
+    {
+      "pattern_id": "legacy_python_udf",
+      "category": "SERIALIZATION_BOTTLENECK",
+      "description": "format_currency Python UDF causing SerDe bottleneck",
+      "recommended_replacement": "F.concat(F.col('currency'), F.lit(' '), F.format_number(F.col('amount'), 2))"
+    }
+  ]
+}
