@@ -301,6 +301,37 @@ def optimize(
     console.print(table)
 
 
+@app.command("benchmark")
+def benchmark(
+    iterations: int = typer.Option(
+        3, "--iterations", "-i", help="Number of benchmark iterations for median statistics."
+    ),
+    scale: int = typer.Option(100_000, "--scale", "-s", help="Synthetic dataset size per table."),
+    output_report: str = typer.Option(
+        "docs/benchmark_report.md", "--output-report", "-o", help="Path to export Markdown report."
+    ),
+    output_json: str = typer.Option(
+        "reports/benchmark_metrics.json", "--output-json", "-j", help="Path to export JSON metrics."
+    ),
+):
+    """Run exhaustive empirical efficiency benchmark comparing real compute, memory, and throughput."""
+    from hermes_midas.benchmarks import BenchmarkReporter, BenchmarkRunner
+
+    console.print(
+        f"[bold cyan]Initiating empirical benchmark suite (Scale: {scale:,} rows, Iterations: {iterations})...[/bold cyan]"
+    )
+    runner = BenchmarkRunner(iterations=iterations, data_scale=scale)
+    report = runner.run_all()
+
+    reporter = BenchmarkReporter(console=console)
+    reporter.print_terminal_dashboard(report)
+    reporter.generate_markdown_report(report, output_path=output_report)
+    reporter.export_json(report, output_path=output_json)
+
+    console.print(f"\n[dim]Markdown report saved to: [bold white]{output_report}[/bold white][/dim]")
+    console.print(f"[dim]JSON metrics exported to: [bold white]{output_json}[/bold white][/dim]\n")
+
+
 def main():
     """Main CLI entrypoint."""
     app()

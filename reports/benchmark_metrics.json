@@ -1,0 +1,106 @@
+{
+  "timestamp": "2026-10-19T17:33:10.166262+00:00",
+  "python_version": "3.12.13",
+  "platform": "Darwin arm64",
+  "workload_metrics": [
+    {
+      "workload_name": "dbt_snowflake_customer_orders",
+      "engine": "snowflake_sql",
+      "pattern_addressed": "SELECT_STAR + CARTESIAN_JOIN + UNFILTERED_PARTITION",
+      "baseline_duration_ms": 15.36,
+      "optimized_duration_ms": 1.61,
+      "speedup_factor": 9.56,
+      "time_reduction_pct": 89.5,
+      "baseline_memory_mb": 11.77,
+      "optimized_memory_mb": 0.75,
+      "memory_reduction_pct": 93.6,
+      "baseline_cpu_time_ms": 15.64,
+      "optimized_cpu_time_ms": 1.71,
+      "data_parity_verified": true,
+      "rows_processed": 100000,
+      "iterations": 3,
+      "details": {
+        "baseline_rows": 20000,
+        "optimized_rows": 3892
+      }
+    },
+    {
+      "workload_name": "glue_customer360_elt",
+      "engine": "glue_pyspark",
+      "pattern_addressed": "LEGACY_PYTHON_UDF -> NATIVE_CATALYST_EXPRESSION",
+      "baseline_duration_ms": 6.98,
+      "optimized_duration_ms": 2.83,
+      "speedup_factor": 2.46,
+      "time_reduction_pct": 59.4,
+      "baseline_memory_mb": 11.09,
+      "optimized_memory_mb": 4.38,
+      "memory_reduction_pct": 60.5,
+      "baseline_cpu_time_ms": 6.99,
+      "optimized_cpu_time_ms": 2.83,
+      "data_parity_verified": true,
+      "rows_processed": 100000,
+      "iterations": 3,
+      "details": {
+        "exact_parity": true,
+        "sample_output": [
+          "ITEM_SKU_0_CATEGORY_ELECTRONICS",
+          "UNKNOWN",
+          "ITEM_SKU_2_CATEGORY_ELECTRONICS"
+        ]
+      }
+    },
+    {
+      "workload_name": "emr_clickstream_attribution",
+      "engine": "emr_spark",
+      "pattern_addressed": "ORPHAN_ACTIONS_DAG_RECOMPUTATION",
+      "baseline_duration_ms": 7.22,
+      "optimized_duration_ms": 2.35,
+      "speedup_factor": 3.07,
+      "time_reduction_pct": 67.5,
+      "baseline_memory_mb": 5.84,
+      "optimized_memory_mb": 1.95,
+      "memory_reduction_pct": 66.7,
+      "baseline_cpu_time_ms": 7.23,
+      "optimized_cpu_time_ms": 2.35,
+      "data_parity_verified": true,
+      "rows_processed": 100000,
+      "iterations": 3,
+      "details": {
+        "unoptimized_triggers": 3,
+        "optimized_triggers": 1
+      }
+    },
+    {
+      "workload_name": "delta_compaction_optimizer",
+      "engine": "spark_delta_s3",
+      "pattern_addressed": "SMALL_FILE_FRAGMENTATION -> COALESCED_COMPACTION",
+      "baseline_duration_ms": 7.4,
+      "optimized_duration_ms": 3.25,
+      "speedup_factor": 2.28,
+      "time_reduction_pct": 56.1,
+      "baseline_memory_mb": 3.95,
+      "optimized_memory_mb": 5.59,
+      "memory_reduction_pct": 0.0,
+      "baseline_cpu_time_ms": 7.38,
+      "optimized_cpu_time_ms": 3.09,
+      "data_parity_verified": true,
+      "rows_processed": 48000,
+      "iterations": 3,
+      "details": {
+        "micro_batches": 60,
+        "records_total": 48000
+      }
+    }
+  ],
+  "engine_metric": {
+    "workloads_evaluated": 60,
+    "total_time_ms": 33.8,
+    "throughput_per_second": 1775.1,
+    "latency_p50_ms": 0.562,
+    "latency_p95_ms": 0.629,
+    "ast_syntax_valid_pct": 100.0
+  },
+  "average_speedup": 4.34,
+  "average_memory_savings_pct": 55.2,
+  "summary": "Executed 4 empirical benchmarks with 3 iterations each. Average real compute speedup: 4.34x. Average memory reduction: 55.2%. Engine throughput: 1775.1 workloads/sec."
+}

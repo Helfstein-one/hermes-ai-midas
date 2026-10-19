@@ -1,4 +1,4 @@
-.PHONY: all test lint fmt up down ps seed analyze audit serve help
+.PHONY: all test lint fmt up down ps seed analyze audit serve benchmark help
 
 PYTHON ?= uv run python
 PYTEST ?= uv run pytest
@@ -8,9 +8,10 @@ COMPOSE ?= $(shell which podman-compose 2>/dev/null || which docker-compose 2>/d
 
 help:
 	@echo "hermes-ai-midas Makefile targets:"
-	@echo "  make test             - Run complete offline test suite (151+ tests)"
+	@echo "  make test             - Run complete offline test suite (173+ tests)"
 	@echo "  make lint             - Run ruff static analysis"
 	@echo "  make fmt              - Format code with ruff"
+	@echo "  make benchmark        - Run empirical real execution efficiency benchmarks"
 	@echo "  make analyze SCRIPT=x - Analyze a PySpark script with AST Inspector"
 	@echo "  make calculate        - Run FinOps pricing calculator"
 	@echo "  make serve            - Run Airflow Webhook FastAPI server on :8000"
@@ -41,6 +42,9 @@ serve:
 
 audit:
 	$(PYTHON) -m hermes_midas.cli audit --repo .
+
+benchmark:
+	$(PYTHON) -m hermes_midas.cli benchmark --scale $(if $(SCALE),$(SCALE),100000) --iterations $(if $(ITERS),$(ITERS),3)
 
 up:
 	$(COMPOSE) -f compose.yaml up -d

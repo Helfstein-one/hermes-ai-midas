@@ -300,6 +300,22 @@ jobs:
       - name: Run Adversarial and Challenger M5 Suite
         run: uv run pytest tests/adversarial/test_adversarial_deduplication.py tests/adversarial/test_adversarial_model_router.py tests/adversarial/test_adversarial_webhook.py tests/adversarial/test_challenger_m5.py -v --tb=short
 
+  e2e-benchmarks:
+    name: "4.5 E2E / Empirical Compute Benchmarks Suite"
+    needs: [workload-snowflake-dbt, workload-aws-glue, workload-emr-serverless, workload-databricks-delta]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync
+      - name: Run Real Compute Efficiency Benchmarks Pytest
+        run: uv run pytest tests/benchmarks/test_real_efficiency.py -v --tb=short
+      - name: Run CLI Benchmark Command
+        run: uv run hermes-midas benchmark --scale 50000 --iterations 2
+
   # ============================================================================
   # STAGE 5: Container Topology & Packaging
   # ============================================================================
@@ -361,6 +377,7 @@ jobs:
       - e2e-cron-auditor
       - e2e-pipeline-cli
       - adversarial-resilience
+      - e2e-benchmarks
       - validate-docker-compose
       - build-docker-image
     runs-on: ubuntu-latest
@@ -388,6 +405,7 @@ jobs:
           echo "| 4. Orchestration | Scheduled Cron Auditor | ${{ needs.e2e-cron-auditor.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 4. Orchestration | Unified Pipeline CLI | ${{ needs.e2e-pipeline-cli.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 4. Orchestration | Adversarial Resilience Suite | ${{ needs.adversarial-resilience.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 4. Orchestration | Empirical Benchmarks Suite | ${{ needs.e2e-benchmarks.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 5. Packaging | Docker Compose Topology | ${{ needs.validate-docker-compose.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| 5. Packaging | Production Dockerfile Build | ${{ needs.build-docker-image.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -410,6 +428,7 @@ jobs:
             "${{ needs.e2e-cron-auditor.result }}"
             "${{ needs.e2e-pipeline-cli.result }}"
             "${{ needs.adversarial-resilience.result }}"
+            "${{ needs.e2e-benchmarks.result }}"
             "${{ needs.validate-docker-compose.result }}"
             "${{ needs.build-docker-image.result }}"
           )
@@ -421,4 +440,4 @@ jobs:
             fi
           done
 
-          echo "✅ **Todos os 19 jobs da esteira foram executados e aprovados com sucesso.**" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Todos os 20 jobs da esteira foram executados e aprovados com sucesso.**" >> $GITHUB_STEP_SUMMARY
