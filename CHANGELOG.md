@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Interactive Resolution Demo & ASCII Comparison Visualizer**:
+  - Implemented `src/hermes_midas/benchmarks/ascii_visualizer.py` rendering comparative horizontal ASCII bars for latency (ms), peak RAM (MB), and monthly cloud spend ($).
+  - Implemented `src/hermes_midas/benchmarks/demo.py` (`MidasDemoRunner`) driving step-by-step resolution across 5 FinOps ecosystems: Snowflake SQL, AWS Glue 4.0, EMR Serverless, EMR on EC2 Graviton/Spot, and Databricks Delta Lake.
+  - Added CLI command `hermes-midas demo` with `--scenario` and `--interactive` flags, plus Makefile targets `make demo`, `make demo-snowflake`, and `make demo-glue`.
+  - Added 5 standalone, executable cookbook scripts in `examples/`:
+    - `01_snowflake_dbt_optimization.py`: Cartesian join -> Pruned join (**$5,076.00/mo** savings).
+    - `02_glue_pyspark_udf_vectorization.py`: Legacy UDF -> Native Catalyst (**$11,246.40/mo** savings).
+    - `03_emr_unpersisted_dag_recomputation.py`: Orphan actions -> Single pass DAG (**$303.64/mo** savings).
+    - `04_emr_graviton_spot_rightsizing.py`: x86 On-Demand -> Graviton + Spot (**$370.56/mo** savings).
+    - `05_delta_lake_small_files_compaction.py`: Micro-files -> Coalesced compaction (**$793.80/mo** savings).
+    - `quickstart_all.py`: Consolidated tour orchestrating all 5 ecosystems (**$17,790.40/mo** savings).
+  - Expanded test suite with `tests/benchmarks/test_demo_and_examples.py`, bringing total passing test suite to **183 tests** (100% offline, zero network or API keys).
 - **Empirical Efficiency Benchmarking Suite & DuckDB Execution Engine**:
   - Implemented `src/hermes_midas/benchmarks/` with multi-technology real compute benchmarks:
     - `dbt_snowflake_customer_orders`: DuckDB in-memory execution comparing Cartesian SELECT * vs INNER JOIN + partition pruning (yielding **9.97x speedup**, **-93.6% peak RAM reduction**).

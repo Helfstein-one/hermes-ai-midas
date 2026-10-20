@@ -332,6 +332,46 @@ def benchmark(
     console.print(f"[dim]JSON metrics exported to: [bold white]{output_json}[/bold white][/dim]\n")
 
 
+@app.command("demo")
+def demo(
+    scenario: str = typer.Option(
+        "all",
+        "--scenario",
+        "-s",
+        help="FinOps ecosystem to demonstrate: 'all', 'snowflake', 'glue', 'emr-serverless', 'emr-graviton', 'delta'.",
+    ),
+    interactive: bool = typer.Option(
+        False,
+        "--interactive/--no-interactive",
+        "-i",
+        help="Wait for user input [ENTER] between steps.",
+    ),
+):
+    """Run step-by-step resolution demonstration and live benchmark comparison with ASCII charts."""
+    from hermes_midas.benchmarks.demo import MidasDemoRunner
+
+    runner = MidasDemoRunner(console=console)
+    sc = scenario.lower().strip()
+
+    if sc in ("all", "tour"):
+        runner.run_all(interactive=interactive)
+    elif sc in ("snowflake", "dbt"):
+        runner.run_snowflake_demo(interactive=interactive)
+    elif sc in ("glue", "pyspark"):
+        runner.run_glue_demo(interactive=interactive)
+    elif sc in ("emr-serverless", "emr", "clickstream"):
+        runner.run_emr_serverless_demo(interactive=interactive)
+    elif sc in ("emr-graviton", "graviton", "spot"):
+        runner.run_emr_graviton_demo(interactive=interactive)
+    elif sc in ("delta", "delta_lake", "compaction"):
+        runner.run_delta_demo(interactive=interactive)
+    else:
+        console.print(
+            f"[bold red]Unknown scenario '{scenario}'. Choose from: 'all', 'snowflake', 'glue', 'emr-serverless', 'emr-graviton', 'delta'.[/bold red]"
+        )
+        raise typer.Exit(code=1)
+
+
 def main():
     """Main CLI entrypoint."""
     app()

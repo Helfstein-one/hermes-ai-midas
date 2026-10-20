@@ -311,10 +311,14 @@ jobs:
           enable-cache: true
       - run: uv python install 3.12
       - run: uv sync
-      - name: Run Real Compute Efficiency Benchmarks Pytest
-        run: uv run pytest tests/benchmarks/test_real_efficiency.py -v --tb=short
+      - name: Run Real Compute Efficiency & Examples Pytest
+        run: uv run pytest tests/benchmarks/ -v --tb=short
       - name: Run CLI Benchmark Command
         run: uv run hermes-midas benchmark --scale 50000 --iterations 2
+      - name: Run CLI Demo Command (5 Ecosystems Tour)
+        run: uv run hermes-midas demo --scenario all --no-interactive
+      - name: Run Standalone Examples Script
+        run: uv run python examples/quickstart_all.py
 
   # ============================================================================
   # STAGE 5: Container Topology & Packaging

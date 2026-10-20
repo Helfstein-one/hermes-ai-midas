@@ -56,10 +56,10 @@ uv sync
 ---
 
 ### 2.3. Execução dos Testes (100% Offline e Determinístico)
-O projeto conta com **153 testes automatizados** (unitários, integrados, adversariais e E2E) que rodam sem necessidade de internet, chaves de API pagas ou infraestrutura de nuvem:
+O projeto conta com **183 testes automatizados** (unitários, integrados, adversariais, benchmarks e E2E) que rodam sem necessidade de internet, chaves de API pagas ou infraestrutura de nuvem:
 
 ```bash
-# Executar a suíte completa de 173 testes via Makefile
+# Executar a suíte completa de 183 testes via Makefile
 make test
 
 # Ou diretamente com uv e pytest em modo detalhado
@@ -139,6 +139,23 @@ uv run hermes-midas benchmark --scale 100000 --iterations 3
 
 ---
 
+### 2.8. Demonstração Interativa & Tour dos 5 Ecossistemas com Gráficos ASCII
+O projeto possui um comando de demonstração guiada que apresenta em tempo real a detecção do anti-pattern, o diff de código gerado via AST, a execução do benchmark em DuckDB e a evolução gráfica em barras ASCII:
+
+```bash
+# Executar tour completo pelos 5 ecossistemas (Snowflake, Glue, EMR, Graviton, Delta)
+make demo
+
+# Executar cenários específicos
+make demo-snowflake
+make demo-glue
+
+# Ou diretamente via CLI com modo interativo (pausando a cada etapa)
+uv run hermes-midas demo --scenario all --interactive
+```
+
+---
+
 ## 🖼️ 3. Arquitetura de Referência em Produção e Local (AWS & Draw.io)
 
 O `hermes-ai-midas` disponibiliza três desenhos técnicos oficiais com padrões do **AWS Architecture Center (Ícones Oficiais 2026)** e topologia de contêineres, cobrindo a execução in-VPC, governança enterprise multi-conta e emulação local isolada:
@@ -204,6 +221,42 @@ Os testes automatizados e execuções empíricas com os 6 workloads em `workload
 | **Delta Lake S3** (`compaction`) | 60 min (500 micro-arquivos) | 14 min (coalesce 16) | **-76.7%** | $882.00 | $88.20 | **$793.80 / mês** (-90.0%) |
 | **Snowflake + dbt** (`customer_orders`) | 106.5 min (2X-Large WH) | 6.0 min (Medium WH + Pruning) | **-94.4%** | $5,112.00 | $36.00 | **$5,076.00 / mês** (-99.3%) |
 | **🏆 TOTAL CONSOLIDADO** | **434.5 min** | **98 min (-77.4%)** | **-77.4%** | **$24,412.21** | **$1,141.98** | **$23,270.23 / mês (-95.3%)** |
+
+---
+
+### 4.2. Laboratório de Exemplos Práticos & Resolução (Cookbook)
+
+O diretório [`examples/`](examples/) disponibiliza scripts executáveis independentes que reproduzem o ciclo de ponta a ponta para cada ecossistema: injeção de dados sintéticos volumosos, cronometragem isolada, medição de pico de RAM via `tracemalloc`, asserção de 100% de paridade de dados e renderização de cartões comparativos em barras ASCII:
+
+| Exemplo | Ecossistema | Anti-Pattern Mitigado | Script Executável | Economia Mensal |
+| :--- | :--- | :--- | :--- | :--- |
+| **01** | `Snowflake + dbt` | `SELECT *` + Join Cartesiano + Scan sem Pruning | `python examples/01_snowflake_dbt_optimization.py` | **$5,076.00 / mês** |
+| **02** | `AWS Glue 4.0` | Legacy Python `@udf` (SerDe Py4J) ➔ Expressão Catalyst | `python examples/02_glue_pyspark_udf_vectorization.py` | **$11,246.40 / mês** |
+| **03** | `AWS EMR Serverless` | Ações Órfãs (3x DAG pass) ➔ Escrita Direta em Passagem Única | `python examples/03_emr_unpersisted_dag_recomputation.py` | **$303.64 / mês** |
+| **04** | `AWS EMR on EC2` | 16x m5.2xlarge On-Demand ➔ Graviton m6g.xlarge + Spot Task Fleet | `python examples/04_emr_graviton_spot_rightsizing.py` | **$370.56 / mês** |
+| **05** | `Databricks Delta` | `.repartition(500)` micro-files ➔ `.coalesce(16)` + Particionamento | `python examples/05_delta_lake_small_files_compaction.py` | **$793.80 / mês** |
+| **🌟** | **Tour Completo** | **Executa todos os 5 exemplos com Scoreboard consolidado** | `python examples/quickstart_all.py` | **$17,790.40 / mês** |
+
+#### Exemplo de Saída Visual com Barras ASCII (Terminal):
+```text
+====================================================================
+⚡ RESOLUTION BENCHMARK: Snowflake dbt Mart (fct_customer_orders.sql)
+🎯 Anti-Pattern: SELECT_STAR + CARTESIAN_JOIN -> INNER JOIN + PRUNING
+🛡️ Parity Status: [✅ 100% DATA PARITY MATCH]
+--------------------------------------------------------------------
+  [Execution Latency]
+    Baseline:  ██████████████████████      8.60 ms
+    Optimized: ███                         1.12 ms  (7.68x faster | -87.0%)
+
+  [Peak Memory (RAM)]
+    Baseline:  ██████████████████████      5.88 MB
+    Optimized: █                           0.38 MB  (-93.5% reduction)
+
+  [Monthly Cloud Spend]
+    Baseline:  ██████████████████████    $5,112.00
+    Optimized:                              $36.00  (-$5,076.00 | -99.3%)
+====================================================================
+```
 
 ---
 
@@ -737,6 +790,23 @@ uv run hermes-midas serve --host 0.0.0.0 --port 8000
 Executa a suíte de benchmarks em DuckDB e simulação Catalyst medindo tempo, velocidade (speedup), memória e garantindo 100% de paridade de dados:
 ```bash
 uv run hermes-midas benchmark --scale 100000 --iterations 3 --output-report docs/benchmark_report.md --output-json reports/benchmark_metrics.json
+```
+
+#### 7. Tour Interativo de Resolução e Benchmarks (`demo`)
+Guia o usuário passo a passo pela identificação de anti-patterns, refatoração de código via AST, benchmark real de computação e renderização de cartões em barras ASCII:
+```bash
+# Tour completo por todos os 5 ecossistemas
+uv run hermes-midas demo --scenario all
+
+# Demonstração de cenário individual
+uv run hermes-midas demo --scenario snowflake
+uv run hermes-midas demo --scenario glue
+uv run hermes-midas demo --scenario emr-serverless
+uv run hermes-midas demo --scenario emr-graviton
+uv run hermes-midas demo --scenario delta
+
+# Modo interativo (pausando entre etapas com [ENTER])
+uv run hermes-midas demo --scenario all --interactive
 ```
 
 ---
